@@ -999,6 +999,8 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
 
     fromT2IBtn.addEventListener("click", () => loadBackgroundFromUrl(txt2imgImageSrc(), fromT2IBtn));
     fromI2IBtn.addEventListener("click", () => loadBackgroundFromUrl(img2imgCanvas()?.img || null, fromI2IBtn));
+    // stock Forge Neo keeps no list of its canvases, so img2img's image can't be read there: hide the button
+    if (!window.forgeCanvasInstances) fromI2IBtn.style.display = "none";
 
     clearImageBtn.addEventListener("click", () => setBackground(null));
 

@@ -8,25 +8,25 @@ const ctx = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "javascript", "characters.js"), "utf8"), ctx);
 const { mlCaptionLine, mlCaptionHas, mlAppendCharacter, mlAddAbbr } = ctx;
 
-const c = { abbr: "LS", name: "Lisa Simpson", description: "star hair" };
+const c = { abbr: "MR", name: "Mira Reed", description: "green scarf" };
 
-assert.strictEqual(mlCaptionLine(c), "(LS) Lisa Simpson, star hair");
-assert.strictEqual(mlAppendCharacter("", c), "(LS) Lisa Simpson, star hair");
-assert.strictEqual(mlAppendCharacter("   ", c), "(LS) Lisa Simpson, star hair");
-assert.strictEqual(mlAppendCharacter("a park", c), "a park\n(LS) Lisa Simpson, star hair");
-assert.strictEqual(mlAppendCharacter("a park\n", c), "a park\n(LS) Lisa Simpson, star hair");
-assert.strictEqual(mlAppendCharacter("a park\n\n  ", c), "a park\n(LS) Lisa Simpson, star hair");
-assert.strictEqual(mlAppendCharacter("(ls) x", c), null);
-assert.strictEqual(mlCaptionHas("(LS) x", "LS"), true);
-assert.strictEqual(mlCaptionHas("(LS) x", "L"), false);
-assert.strictEqual(mlCaptionHas("LS waves", "LS"), false);
-assert.strictEqual(mlAppendCharacter("(LS) Lisa", { abbr: "L", name: "Lou", description: "d" }), "(LS) Lisa\n(L) Lou, d");
+assert.strictEqual(mlCaptionLine(c), "(MR) Mira Reed, green scarf");
+assert.strictEqual(mlAppendCharacter("", c), "(MR) Mira Reed, green scarf");
+assert.strictEqual(mlAppendCharacter("   ", c), "(MR) Mira Reed, green scarf");
+assert.strictEqual(mlAppendCharacter("a park", c), "a park\n(MR) Mira Reed, green scarf");
+assert.strictEqual(mlAppendCharacter("a park\n", c), "a park\n(MR) Mira Reed, green scarf");
+assert.strictEqual(mlAppendCharacter("a park\n\n  ", c), "a park\n(MR) Mira Reed, green scarf");
+assert.strictEqual(mlAppendCharacter("(mr) x", c), null);
+assert.strictEqual(mlCaptionHas("(MR) x", "MR"), true);
+assert.strictEqual(mlCaptionHas("(MR) x", "M"), false);
+assert.strictEqual(mlCaptionHas("MR waves", "MR"), false);
+assert.strictEqual(mlAppendCharacter("(MR) Mira", { abbr: "L", name: "Lou", description: "d" }), "(MR) Mira\n(L) Lou, d");
 
 // a box caption names the character by its abbreviation, at the start
-assert.strictEqual(mlAddAbbr("", "LS"), "(LS)");
-assert.strictEqual(mlAddAbbr("waving", "LS"), "(LS) waving");
-assert.strictEqual(mlAddAbbr("  waving", "LS"), "(LS) waving");
-assert.strictEqual(mlAddAbbr("(BS) and (ls) waving", "LS"), null, "already there");
-assert.strictEqual(mlAddAbbr("(BS) waving", "LS"), "(LS) (BS) waving");
+assert.strictEqual(mlAddAbbr("", "MR"), "(MR)");
+assert.strictEqual(mlAddAbbr("waving", "MR"), "(MR) waving");
+assert.strictEqual(mlAddAbbr("  waving", "MR"), "(MR) waving");
+assert.strictEqual(mlAddAbbr("(OB) and (mr) waving", "MR"), null, "already there");
+assert.strictEqual(mlAddAbbr("(OB) waving", "MR"), "(MR) (OB) waving");
 
 console.log("characters.js: all assertions passed");

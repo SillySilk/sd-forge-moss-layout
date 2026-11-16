@@ -23,7 +23,7 @@ Updates: **Extensions → Installed → Check for updates**.
 - **Editing:** undo / redo (Ctrl+Z, Ctrl+Y), Delete / arrows / Ctrl+D on the selected box, resize from any side
   (Shift keeps the shape), snapping with guide lines (Alt for free movement), a width/height swap.
 - **Size follows txt2img** until you set one by hand; a marker says which, and **Follow txt2img** resumes.
-- **Reference image** under the boxes, loaded from a file, the txt2img result or the img2img input.
+- **Reference image** under the boxes, loaded from a file or the txt2img result (and the img2img input on Forge builds that support it, see Notes).
 - **+ LoRA** picker for Extra and for each box.
 - **Load the prompt** that is in txt2img back into the editor; **autosave** keeps the last session in the browser.
 - A **Thing-o-Matic** styled side panel (gold and ember buttons, blackletter titles).
@@ -47,8 +47,10 @@ is ignored by git, so updating never overwrites or uploads your own. Deleted fil
 ## Notes
 
 - Needs a Forge Neo with MOSS-Image support (2.31 or later).
-- On some Forge builds two extras switch themselves off: sending the reference image into img2img
-  (it needs `window.forgeCanvasInstances`) and the LoRA folder selector.
+- Two extras need additions that stock Forge Neo does not have, and switch themselves off there:
+  **From img2img** and putting the reference image into img2img on **Send to img2img** (both need
+  `window.forgeCanvasInstances`), and the LoRA folder selector.
+- The panel's fonts (Pirata One, Special Elite, Crimson Pro) load from Google Fonts; offline it falls back to system fonts.
 - Tests: `node tests/<file>.js` for each JS test, and `python tests/test_characters.py`.
 
 ## Credits

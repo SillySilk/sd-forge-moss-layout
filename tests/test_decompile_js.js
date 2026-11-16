@@ -10,15 +10,15 @@ const { mlCompilePrompt, mlDecompilePrompt } = ctx;
 
 const layout = {
     width: 1024, height: 768, bbox_coord_space: "abs", bbox_format: "xyxy",
-    summary: { canvas: "single", caption: "a park\n(BS) Bart, (red:-1) shirt" },
-    items: [{ label: "character", caption: "(BS) waving", bbox: [10, 20, 300, 400] }],
+    summary: { canvas: "single", caption: "a park\n(OB) Bram, (red:-1) shirt" },
+    items: [{ label: "character", caption: "(OB) waving", bbox: [10, 20, 300, 400] }],
 };
 // as Send does: the compiled prompt, then Extra, on one line
 const sent = (mlCompilePrompt(JSON.stringify(layout)) + "\n<lora:x:1>").replaceAll("\n", " ");
-assert.ok(sent.includes(String.raw`\(BS\)`),"brackets are escaped in the prompt itself");
+assert.ok(sent.includes(String.raw`\(OB\)`),"brackets are escaped in the prompt itself");
 const back = mlDecompilePrompt(sent, 1024, 768);
-assert.strictEqual(back.summary.caption, "a park\n(BS) Bart, (red:-1) shirt", "brackets come back as typed");
-assert.strictEqual(back.items[0].caption, "(BS) waving");
+assert.strictEqual(back.summary.caption, "a park\n(OB) Bram, (red:-1) shirt", "brackets come back as typed");
+assert.strictEqual(back.items[0].caption, "(OB) waving");
 assert.deepStrictEqual(Array.from(back.items[0].bbox), [10, 20, 300, 400]);
 assert.strictEqual(back.extra, "<lora:x:1>");
 // sending it again gives the same prompt

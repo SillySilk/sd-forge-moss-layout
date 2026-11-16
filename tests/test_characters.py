@@ -47,9 +47,9 @@ class StoreTest(unittest.TestCase):
 
     def test_save_and_upsert(self):
         self.store.create("c")
-        self.store.save_character("c", "LS", "Lisa Simpson", "star hair")
-        result = self.store.save_character("c", "ls", "Lisa S.", "pink dress")
-        self.assertEqual(result["characters"], [{"abbr": "ls", "name": "Lisa S.", "description": "pink dress"}])
+        self.store.save_character("c", "MR", "Mira Reed", "green scarf")
+        result = self.store.save_character("c", "mr", "Mira R.", "red coat")
+        self.assertEqual(result["characters"], [{"abbr": "mr", "name": "Mira R.", "description": "red coat"}])
 
     def test_save_tags_and_palette(self):
         self.store.create("c")
@@ -82,23 +82,23 @@ class StoreTest(unittest.TestCase):
 
     def test_save_validates(self):
         self.store.create("c")
-        for abbr in ["", "ABCDEF", "L S", "L-S"]:
+        for abbr in ["", "ABCDEF", "M R", "L-S"]:
             with self.assertRaises(CharacterError, msg=abbr):
                 self.store.save_character("c", abbr, "Name", "desc")
         with self.assertRaises(CharacterError):
-            self.store.save_character("c", "LS", "  ", "desc")
+            self.store.save_character("c", "MR", "  ", "desc")
         with self.assertRaises(CharacterError):
-            self.store.save_character("c", "LS", "Name", "\n ")
+            self.store.save_character("c", "MR", "Name", "\n ")
         self.assertEqual(self.store.read("c")["characters"], [])
 
     def test_save_missing_file(self):
         with self.assertRaises(CharacterNotFound):
-            self.store.save_character("nope", "LS", "Name", "desc")
+            self.store.save_character("nope", "MR", "Name", "desc")
 
     def test_save_collapses_whitespace(self):
         self.store.create("c")
-        result = self.store.save_character("c", " LS ", "  Lisa  ", "a\n\tb   c ")
-        self.assertEqual(result["characters"], [{"abbr": "LS", "name": "Lisa", "description": "a b c"}])
+        result = self.store.save_character("c", " MR ", "  Mira  ", "a\n\tb   c ")
+        self.assertEqual(result["characters"], [{"abbr": "MR", "name": "Mira", "description": "a b c"}])
 
     def test_save_rereads_file(self):
         self.store.create("c")
@@ -109,12 +109,12 @@ class StoreTest(unittest.TestCase):
 
     def test_delete(self):
         self.store.create("c")
-        self.store.save_character("c", "LS", "Lisa", "x")
-        self.store.save_character("c", "MB", "Marge", "y")
-        result = self.store.delete_character("c", "ls")
-        self.assertEqual([c["abbr"] for c in result["characters"]], ["MB"])
+        self.store.save_character("c", "MR", "Mira", "x")
+        self.store.save_character("c", "OB", "Bram", "y")
+        result = self.store.delete_character("c", "mr")
+        self.assertEqual([c["abbr"] for c in result["characters"]], ["OB"])
         with self.assertRaises(CharacterNotFound):
-            self.store.delete_character("c", "LS")
+            self.store.delete_character("c", "MR")
 
     def test_example_read_only(self):
         write(self.dir, "ex.jbcast", cast(("MR", "Example: Mira", "x"), example=True))
@@ -126,14 +126,14 @@ class StoreTest(unittest.TestCase):
 
     def test_delete_file_moves_it_aside(self):
         self.store.create("mine")
-        self.store.save_character("mine", "LS", "Lisa", "x")
+        self.store.save_character("mine", "MR", "Mira", "x")
         self.store.create("other")
         self.assertEqual(self.store.delete_file("mine"), {"files": ["other.jbcast"]})
         self.assertEqual(self.store.list_files(), ["other.jbcast"])
         kept = os.path.join(self.dir, "deleted", "mine.jbcast")
         self.assertTrue(os.path.isfile(kept), "the file is kept in deleted/, not destroyed")
         with open(kept, encoding="utf-8") as f:
-            self.assertEqual(json.load(f)["characters"][0]["abbr"], "LS")
+            self.assertEqual(json.load(f)["characters"][0]["abbr"], "MR")
 
     def test_delete_file_twice_keeps_both_copies(self):
         for _ in range(2):
@@ -162,7 +162,7 @@ class StoreTest(unittest.TestCase):
         self.assertIn("bad.jbcast", str(ctx.exception))
 
     def test_read_invalid_structure(self):
-        write(self.dir, "bad.jbcast", cast(("L S", "Lisa", "x")))
+        write(self.dir, "bad.jbcast", cast(("M R", "Mira", "x")))
         with self.assertRaises(CharacterError) as ctx:
             self.store.read("bad")
         self.assertIn("bad.jbcast", str(ctx.exception))
@@ -185,11 +185,11 @@ class StoreTest(unittest.TestCase):
     def test_import_rejects(self):
         self.store.create("taken")
         bad = [
-            ("dup", json.dumps(cast(("LS", "Lisa", "x"), ("ls", "Lisa 2", "y")))),
-            ("abbr", json.dumps(cast(("TOOLONG", "Lisa", "x")))),
+            ("dup", json.dumps(cast(("MR", "Mira", "x"), ("mr", "Mira 2", "y")))),
+            ("abbr", json.dumps(cast(("TOOLONG", "Mira", "x")))),
             ("ver", json.dumps({"version": 2, "characters": []})),
             ("junk", "{not json"),
-            ("taken", json.dumps(cast(("LS", "Lisa", "x")))),
+            ("taken", json.dumps(cast(("MR", "Mira", "x")))),
         ]
         for name, content in bad:
             with self.assertRaises(CharacterError, msg=name):
