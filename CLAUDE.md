@@ -1,11 +1,11 @@
-# JSON Builder: working notes
+# MOSS Layout: working notes
 
 This folder is part of a **public** repo. Before anything here is committed, pushed,
 screenshotted or written up, check it for personal material.
 
 ## Public vs personal: always check
 
-The owner uses this builder for personal prompts and keeps a personal character roster.
+The owner uses this extension for personal prompts and keeps a personal character roster.
 None of that belongs in public. On every change, check:
 
 - **Screenshots and GIFs:** the Characters file dropdown must show `examples.jbcast`, and the
@@ -26,5 +26,11 @@ If something personal has already gone public, stop and tell the owner. Don't qu
 
 ## Where things are
 
-The full feature notes (layout, editing, characters, LoRA picker, tests) live in the repo's
-root `CLAUDE.md` under "JSON Builder follows txt2img resolution". Read them before changing code here.
+- `scripts/moss_layout.py`: the tab (`MOSS Layout`, DOM id `tab_moss-layout`) and the character routes `/moss_layout/characters/*`.
+- `lib_moss_layout/characters.py`: the `.jbcast` store.
+- `javascript/main.js`: the whole UI; helpers in `editing.js`, `fields.js`, `characters.js`; `compile.js` / `decompile.js` turn a layout into the MOSS prompt and back.
+- Every name is prefixed `ml` / `ml-` (CSS classes, `--ml-*` variables, localStorage keys, JS globals) so this runs beside Forge Neo's stock JSON Builder (`jb-`, `compilePrompt`). Keep new names prefixed.
+- Fork-only hooks must stay optional: `window.forgeCanvasInstances`, `#txt2img_lora_folder_select`.
+- `.ml-root button` outranks a bare `.ml-…` button class; scope new button rules under `.ml-root`.
+- Forge links each extension's CSS/JS with the file's mtime from startup: after an edit, restart or hard-refresh (Ctrl+F5).
+- Tests: `node tests/test_*_js.js`, and `tests/test_characters.py` with Forge's venv python.
