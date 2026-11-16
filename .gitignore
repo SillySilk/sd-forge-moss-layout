@@ -1,0 +1,7 @@
+__pycache__/
+*.py[cod]
+# personal character files stay on your PC; only the examples ship
+/characters/*.jbcast
+!/characters/examples.jbcast
+/characters/deleted/
+.playwright-mcp/
