@@ -796,6 +796,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
 
     function appendTag(field, tag) {
         const current = field.value.trim();
+        if (current.includes(tag)) return; // picked again: already there
         field.value = current ? `${current} ${tag}` : tag;
         field.dispatchEvent(new Event("input", { bubbles: true }));
         autoGrow(field);
@@ -823,18 +824,32 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         loraModal.classList.add("ml-hidden");
     }
 
+    // trigger words go to the front of a field (the prompt reads them first); the tag itself can sit anywhere
+    function prependWords(field, words) {
+        const next = mlPrependWords(field.value, words);
+        if (next === field.value.trim()) return;
+        field.value = next;
+        field.dispatchEvent(new Event("input", { bubbles: true }));
+        autoGrow(field);
+    }
+
+    // summary pick: tag in Extra, trigger words at the front of Meta, the first thing in the exported prompt
     loraBtn.addEventListener("click", () =>
-        openLoraPicker((tag) => {
+        openLoraPicker((pick) => {
+            const { tag, trigger } = mlSplitLoraPick(pick);
             appendTag(sumExtra, tag);
-            state.summary.extra = sumExtra.value;
-            saveLayout();
+            if (trigger) prependWords(sumMeta, trigger);
         }),
     );
     // shared by the list row and the canvas box; the row's input event keeps item.caption and the box in step
+    // item pick: trigger words open the item's caption, the tag goes at its end
     function pickLoraForItem(item) {
-        openLoraPicker((tag) => {
+        openLoraPicker((pick) => {
             const input = listRefs.get(item.id)?.captionInput;
-            if (input) appendTag(input, tag);
+            if (!input) return;
+            const { tag, trigger } = mlSplitLoraPick(pick);
+            appendTag(input, tag);
+            if (trigger) prependWords(input, trigger);
         });
     }
 

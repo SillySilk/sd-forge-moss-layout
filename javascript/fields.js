@@ -33,3 +33,23 @@ function mlCleanPalette(list) {
     const colours = list.filter((c) => typeof c === "string" && /^#[0-9a-f]{6}$/i.test(c.trim())).map((c) => c.trim().toUpperCase());
     return mlMergeList(colours, [], ML_MAX_COLOURS);
 }
+
+// a pick from the LoRA tab is "<lora:name:weight>" plus the LoRA's trigger words, if it has any
+function mlSplitLoraPick(text) {
+    const s = String(text || "").trim();
+    const m = s.match(/^(<lora:[^>]*>)(.*)$/s);
+    if (!m) return { tag: s, trigger: "" };
+    return { tag: m[1], trigger: m[2].trim().replace(/^[,\s]+|[,\s]+$/g, "") };
+}
+
+// put comma-separated words at the front of a field, skipping words it already holds
+function mlPrependWords(current, words) {
+    const field = String(current || "").trim();
+    const have = new Set(field.split(",").map((w) => w.trim().toLowerCase()).filter(Boolean));
+    const add = String(words || "")
+        .split(",")
+        .map((w) => w.trim())
+        .filter((w) => w && !have.has(w.toLowerCase()));
+    if (!add.length) return field;
+    return field ? `${add.join(", ")}, ${field}` : add.join(", ");
+}
