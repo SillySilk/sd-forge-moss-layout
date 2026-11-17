@@ -9,8 +9,11 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 
 from lib_moss_layout.characters import CharacterError, CharacterNotFound, CharacterStore
+from lib_moss_layout.scenes import SceneError, SceneExists, SceneNotFound, SceneStore
 
-CHARACTERS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "characters")
+EXT_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CHARACTERS_DIR = os.path.join(EXT_DIR, "characters")
+SCENES_DIR = os.path.join(EXT_DIR, "JSONscenes")  # Save JSON / Load JSON read and write here
 
 
 def builder_ui():
@@ -86,3 +89,40 @@ def characters_api(_demo: gr.Blocks, app: FastAPI):
 
 
 script_callbacks.on_app_started(characters_api)
+
+
+class SceneBody(BaseModel):
+    path: str
+    content: str
+    overwrite: bool = False
+
+
+def _scene_call(fn, *args):
+    try:
+        return fn(*args)
+    except SceneNotFound as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except SceneExists as e:
+        raise HTTPException(status_code=409, detail=str(e))
+    except SceneError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
+def scenes_api(_demo: gr.Blocks, app: FastAPI):
+    store = SceneStore(SCENES_DIR)
+    base = "/moss_layout/scenes"
+
+    @app.get(f"{base}/list")
+    def list_scenes():
+        return {"files": _scene_call(store.list)}
+
+    @app.get(f"{base}/file")
+    def read_scene(path: str):
+        return _scene_call(store.read, path)
+
+    @app.post(f"{base}/save")
+    def save_scene(body: SceneBody):
+        return _scene_call(store.save, body.path, body.content, body.overwrite)
+
+
+script_callbacks.on_app_started(scenes_api)

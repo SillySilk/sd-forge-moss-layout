@@ -673,7 +673,19 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         ]),
     ]);
 
-    const root = h("div", { class: "ml-root" }, [canvasSection, side, modal, loraModal, fileInput, imageInput, charImportInput]); // + charImportInput
+    // saved layouts in the extension's JSONscenes/ folder (scripts/moss_layout.py)
+    const SCENE_API = "/moss_layout/scenes";
+    const sceneSearch = h("input", { type: "text", class: "ml-scene-search", placeholder: "Search..." });
+    const sceneOtherBtn = h("button", { type: "button", class: "ml-scene-other", title: "Load a .json file from anywhere on this PC" }, ["Other file…"]);
+    const sceneClose = h("button", { type: "button", class: "ml-dialog-close", title: "Close" }, ["×"]);
+    const sceneList = h("div", { class: "ml-scene-list" });
+    const sceneModal = h("div", { class: "ml-modal ml-hidden" }, [
+        h("div", { class: "ml-dialog ml-scene-dialog" }, [sceneClose, h("div", { class: "ml-row ml-scene-controls" }, [sceneSearch, sceneOtherBtn]), sceneList]),
+    ]);
+    let sceneFiles = [];
+    let currentScene = ""; // path of the last scene loaded or saved, offered as the Save name
+
+    const root = h("div", { class: "ml-root" }, [canvasSection, side, modal, loraModal, sceneModal, fileInput, imageInput, charImportInput]); // + charImportInput
 
     tab.textContent = "";
     tab.appendChild(root);
@@ -881,20 +893,97 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     dialogClose.addEventListener("click", closeDialog);
     dialogLoad.addEventListener("click", handleDialogLoad);
 
-    saveJsonBtn.addEventListener("click", () => {
-        const name = prompt("Save JSON as", "layout.json");
+    async function sceneRequest(path, body) {
+        const res = await fetch(`${SCENE_API}${path}`, body === undefined ? {} : { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+            const err = new Error(data.detail || `Request failed (${res.status})`);
+            err.status = res.status;
+            throw err;
+        }
+        return data;
+    }
+
+    saveJsonBtn.addEventListener("click", async () => {
+        const name = prompt("Save to JSONscenes as (use / for a folder, e.g. My story/01 Opening)", currentScene.replace(/\.json$/i, "") || "layout");
         if (name === null || name.trim() === "") return;
-        const blob = new Blob([JSON.stringify(buildJson(), null, 2)], { type: "application/json" });
-        const url = URL.createObjectURL(blob);
-        const link = h("a", { href: url, download: name.trim() });
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
+        const content = JSON.stringify(buildJson(), null, 2);
+        try {
+            let data;
+            try {
+                data = await sceneRequest("/save", { path: name, content });
+            } catch (e) {
+                if (e.status !== 409 || !confirm(`${e.message} Replace it?`)) throw e;
+                data = await sceneRequest("/save", { path: name, content, overwrite: true });
+            }
+            currentScene = data.path;
+            sceneFiles = data.files;
+            promptMessage(`Saved ${data.path}`);
+        } catch (e) {
+            flash(saveJsonBtn);
+            promptMessage(`Couldn't save: ${e.message}`, true);
+        }
     });
 
-    loadJsonBtn.addEventListener("click", () => {
+    function renderSceneList() {
+        sceneList.textContent = "";
+        const query = sceneSearch.value.trim().toLowerCase();
+        const shown = sceneFiles.filter((f) => !query || f.toLowerCase().includes(query));
+        if (!shown.length) {
+            sceneList.appendChild(h("div", { class: "ml-scene-empty" }, [sceneFiles.length ? "Nothing matches." : "No saved layouts in JSONscenes yet."]));
+            return;
+        }
+        let folder = null;
+        for (const f of shown) {
+            const cut = f.lastIndexOf("/");
+            const dir = cut < 0 ? "" : f.slice(0, cut);
+            if (dir !== folder) {
+                folder = dir;
+                if (dir) sceneList.appendChild(h("div", { class: "ml-scene-folder" }, [dir]));
+            }
+            const label = f.slice(cut + 1).replace(/\.json$/i, "");
+            sceneList.appendChild(h("button", { type: "button", class: `ml-scene-item${dir ? " ml-scene-nested" : ""}${f === currentScene ? " ml-scene-current" : ""}`, title: f, onclick: () => loadScene(f) }, [label]));
+        }
+    }
+
+    async function loadScene(path) {
+        try {
+            const data = await sceneRequest(`/file?path=${encodeURIComponent(path)}`);
+            loadDraft(mlDecompilePrompt(data.content, NaN, NaN));
+            currentScene = data.path;
+            closeScenePicker();
+            promptMessage(`Loaded ${data.path}`);
+        } catch (e) {
+            loadJsonBtn.classList.add("ml-invalid");
+            promptMessage(`Couldn't load ${path}: ${e.message}`, true);
+        }
+    }
+
+    function closeScenePicker() {
+        sceneModal.classList.add("ml-hidden");
+    }
+
+    loadJsonBtn.addEventListener("click", async () => {
         loadJsonBtn.classList.remove("ml-invalid");
+        try {
+            sceneFiles = (await sceneRequest("/list")).files;
+        } catch (e) {
+            flash(loadJsonBtn);
+            promptMessage(`Couldn't list JSONscenes: ${e.message}`, true);
+            return;
+        }
+        sceneSearch.value = "";
+        renderSceneList();
+        sceneModal.classList.remove("ml-hidden");
+        sceneSearch.focus();
+    });
+    sceneSearch.addEventListener("input", renderSceneList);
+    sceneClose.addEventListener("click", closeScenePicker);
+    sceneModal.addEventListener("click", (ev) => {
+        if (ev.target === sceneModal) closeScenePicker();
+    });
+    sceneOtherBtn.addEventListener("click", () => {
+        closeScenePicker();
         fileInput.value = "";
         fileInput.click();
     });
@@ -907,7 +996,8 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
             try {
                 const draft = mlDecompilePrompt(reader.result, NaN, NaN);
                 loadDraft(draft);
-                promptMessage("");
+                currentScene = "";
+                promptMessage(`Loaded ${file.name}`);
             } catch (e) {
                 loadJsonBtn.classList.add("ml-invalid");
                 promptMessage(`Couldn't load ${file.name}: ${e.message}`, true);
@@ -1848,12 +1938,17 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
             ev.preventDefault();
             return;
         }
+        if (ev.key === "Escape" && !sceneModal.classList.contains("ml-hidden")) {
+            closeScenePicker();
+            ev.preventDefault();
+            return;
+        }
         if (ev.key === "Escape" && !modal.classList.contains("ml-hidden")) {
             closeDialog();
             ev.preventDefault();
             return;
         }
-        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden")) return;
+        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden") || !sceneModal.classList.contains("ml-hidden")) return;
         const t = ev.target;
         if (!(t === document.body || root.contains(t)) || isTyping(t)) return;
         const ctrl = ev.ctrlKey || ev.metaKey;

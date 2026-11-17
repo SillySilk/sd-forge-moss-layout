@@ -5,3 +5,6 @@ __pycache__/
 !/characters/examples.jbcast
 /characters/deleted/
 .playwright-mcp/
+
+# saved layouts are personal; the folder is made on first start
+/JSONscenes/
