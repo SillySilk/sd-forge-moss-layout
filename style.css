@@ -1549,3 +1549,14 @@ button.ml-remove:hover {
 .ml-scene-empty {
     color: var(--body-text-color-subdued);
 }
+
+/* drop an image onto the canvas */
+.ml-canvas.ml-drop-target {
+    outline: 3px dashed var(--color-accent);
+    outline-offset: -8px;
+}
+
+.ml-hint {
+    font-size: var(--block-info-text-size);
+    color: var(--block-info-text-color);
+}

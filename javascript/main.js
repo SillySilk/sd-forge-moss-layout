@@ -286,8 +286,8 @@ onUiLoaded(() => {
     const loadJsonBtn = h("button", { type: "button", class: "ml-load-json" }, ["Load JSON"]);
     const loadImageBtn = h("button", { type: "button", class: "ml-load-image", title: "Trace boxes over an image; takes its resolution" }, ["Load Image"]);
     const clearImageBtn = h("button", { type: "button", class: "ml-clear-image", disabled: "" }, ["Clear Image"]);
-    const fromT2IBtn = h("button", { type: "button", class: "ml-from-t2i", title: "Use the selected (or latest) txt2img result as the reference image" }, ["From txt2img"]);
-    const fromI2IBtn = h("button", { type: "button", class: "ml-from-i2i", title: "Use img2img's input image as the reference image" }, ["From img2img"]);
+    const fromT2IBtn = h("button", { type: "button", class: "ml-from-t2i", title: "Use txt2img's finished image (the selected one, else the latest) as the reference image" }, ["From txt2img"]);
+    const fromI2IBtn = h("button", { type: "button", class: "ml-from-i2i", title: "Use img2img's input image (the left one) as the reference image; if it is empty, img2img's result" }, ["From img2img"]);
     const imageOpacity = h("input", { type: "range", class: "ml-image-opacity", min: "0", max: "100", step: "1", value: "100", disabled: "", title: "Image opacity (preview only)" });
     // Save/Load split into Prompt (beside Resolution) and Reference image (full width below)
     const promptSection = h("div", { class: "ml-section ml-save ml-prompt-size" }, [
@@ -300,6 +300,7 @@ onUiLoaded(() => {
         h("div", { class: "ml-section-title" }, ["Reference image"]),
         h("div", { class: "ml-row" }, [loadImageBtn, clearImageBtn, fromT2IBtn, fromI2IBtn]),
         h("div", { class: "ml-row" }, [h("label", {}, ["Opacity"]), imageOpacity]),
+        h("div", { class: "ml-hint" }, ["Or drop / paste (Ctrl+V) an image onto the canvas."]),
     ]);
 
     const dialogInput = h("textarea", { class: "ml-dialog-input", placeholder: "Compiled Prompt or Layout Draft", spellcheck: "false" });
@@ -1086,9 +1087,41 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         }
     }
 
-    // the result the txt2img gallery shows: the selected thumbnail, else the open preview, else the first result
-    function txt2imgImageSrc() {
-        const gallery = document.getElementById("txt2img_gallery");
+    // img2img's input canvases, one per sub-tab (img2img, Sketch, Inpaint, Inpaint sketch)
+    const I2I_INPUT_IDS = ["img2img_image", "img2img_sketch", "img2maskimg", "inpaint_sketch"];
+
+    function canvasIn(elemId) {
+        const target = document.getElementById(elemId);
+        if (!target) return null;
+        return Object.values(window.forgeCanvasInstances ?? {}).find((c) => target.contains(document.getElementById(`drawingCanvas_${c.uuid}`))) ?? null;
+    }
+
+    function img2imgCanvas() {
+        return canvasIn("img2img_image");
+    }
+
+    // the sub-tab img2img is left on; hidden Gradio tabs carry display:none themselves, even while img2img is hidden
+    function activeI2IInputId() {
+        return I2I_INPUT_IDS.find((id) => {
+            const tabItem = document.getElementById(id)?.closest(".tabitem");
+            return tabItem && tabItem.style.display !== "none";
+        });
+    }
+
+    // the image on img2img's left: the open sub-tab's input, else any input that has one
+    function img2imgInputSrc() {
+        const active = activeI2IInputId();
+        const order = active ? [active, ...I2I_INPUT_IDS.filter((id) => id !== active)] : I2I_INPUT_IDS;
+        for (const id of order) {
+            const img = canvasIn(id)?.img;
+            if (img) return img;
+        }
+        return null;
+    }
+
+    // a tab's finished image (the gallery on the right): the selected thumbnail, else the open preview, else the first result
+    function gallerySrc(tabname) {
+        const gallery = document.getElementById(`${tabname}_gallery`);
         if (!gallery) return null;
         const img =
             gallery.querySelector(".thumbnail-item.selected img") ??
@@ -1097,15 +1130,47 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         return img?.src || null;
     }
 
-    function img2imgCanvas() {
-        const target = document.getElementById("img2img_image");
-        return Object.values(window.forgeCanvasInstances ?? {}).find((c) => target?.contains(document.getElementById(`drawingCanvas_${c.uuid}`)));
+    // stock Forge Neo keeps no list of its canvases, so there only the result can be read
+    fromI2IBtn.addEventListener("click", () => loadBackgroundFromUrl(img2imgInputSrc() || gallerySrc("img2img"), fromI2IBtn));
+    fromT2IBtn.addEventListener("click", () => loadBackgroundFromUrl(gallerySrc("txt2img"), fromT2IBtn));
+
+    // ----- drop / paste an image onto the canvas -----
+
+    const isImageFile = (f) => f && f.type.startsWith("image/");
+
+    // an image dragged from another page or a Forge gallery comes as a link, not a file
+    function droppedImageUrl(dt) {
+        const uri = (dt.getData("text/uri-list") || "").split(/\r?\n/).map((l) => l.trim()).find((l) => l && !l.startsWith("#"));
+        if (uri) return uri;
+        const html = dt.getData("text/html");
+        const m = html && html.match(/<img[^>]+src="([^"]+)"/i);
+        return m ? m[1].replace(/&amp;/g, "&") : null;
     }
 
-    fromT2IBtn.addEventListener("click", () => loadBackgroundFromUrl(txt2imgImageSrc(), fromT2IBtn));
-    fromI2IBtn.addEventListener("click", () => loadBackgroundFromUrl(img2imgCanvas()?.img || null, fromI2IBtn));
-    // stock Forge Neo keeps no list of its canvases, so img2img's image can't be read there: hide the button
-    if (!window.forgeCanvasInstances) fromI2IBtn.style.display = "none";
+    let dragDepth = 0;
+    canvasSection.addEventListener("dragenter", (ev) => {
+        ev.preventDefault();
+        dragDepth++;
+        canvasSection.classList.add("ml-drop-target");
+    });
+    canvasSection.addEventListener("dragover", (ev) => {
+        ev.preventDefault();
+        ev.dataTransfer.dropEffect = "copy";
+    });
+    canvasSection.addEventListener("dragleave", () => {
+        dragDepth = Math.max(0, dragDepth - 1);
+        if (!dragDepth) canvasSection.classList.remove("ml-drop-target");
+    });
+    canvasSection.addEventListener("drop", (ev) => {
+        ev.preventDefault();
+        dragDepth = 0;
+        canvasSection.classList.remove("ml-drop-target");
+        const file = [...(ev.dataTransfer.files ?? [])].find(isImageFile);
+        if (file) return loadBackground(file, loadImageBtn);
+        const url = droppedImageUrl(ev.dataTransfer);
+        if (url) loadBackgroundFromUrl(url, loadImageBtn);
+        else loadImageBtn.classList.add("ml-invalid");
+    });
 
     clearImageBtn.addEventListener("click", () => setBackground(null));
 
@@ -1929,6 +1994,18 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
 
     let lastPointerInPanel = false; // where the last click was, side panel or elsewhere
     document.addEventListener("pointerdown", (ev) => (lastPointerInPanel = side.contains(ev.target)), true);
+
+    // Ctrl+V with an image on the clipboard: the tab is open, no window is up, and the focus is not in a text field
+    document.addEventListener("paste", (ev) => {
+        if (!root.isConnected || root.offsetParent === null) return;
+        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden") || !sceneModal.classList.contains("ml-hidden")) return;
+        const t = ev.target;
+        if (!(t === document.body || root.contains(t)) || isTyping(t)) return;
+        const file = [...(ev.clipboardData?.items ?? [])].filter((it) => it.kind === "file").map((it) => it.getAsFile()).find(isImageFile);
+        if (!file) return;
+        ev.preventDefault();
+        loadBackground(file, loadImageBtn);
+    });
 
     document.addEventListener("keydown", (ev) => {
         if (!root.isConnected || root.offsetParent === null) return;
