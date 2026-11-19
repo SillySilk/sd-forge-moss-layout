@@ -6,7 +6,7 @@ const vm = require("node:vm");
 
 const ctx = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "javascript", "fields.js"), "utf8"), ctx);
-const { mlParseTags, mlCleanTags, mlCleanPalette, mlMergeList, mlSplitLoraPick, mlPrependWords } = ctx;
+const { mlParseTags, mlCleanTags, mlCleanPalette, mlMergeList, mlSplitLoraPick } = ctx;
 const eq = (a, b, msg) => assert.deepStrictEqual(Array.from(a), b, msg);
 
 eq(mlParseTags(" old man, , Old Man,hat\nscarf "), ["old man", "hat", "scarf"], "split, trim, drop empties, dedupe ignoring case");
@@ -33,13 +33,6 @@ eq(mlMergeList(["a", "b"], ["c"], 2), ["a", "b"], "respects the cap");
     assert.strictEqual(bare.trigger, "", "no trigger words");
     const lead = mlSplitLoraPick(" <lora:x:1>  ,  word ");
     assert.strictEqual(lead.trigger, "word", "stray comma and spaces trimmed");
-}
-{
-    assert.strictEqual(mlPrependWords("photo, film grain", "ink sketch"), "ink sketch, photo, film grain", "goes first, comma joined");
-    assert.strictEqual(mlPrependWords("", "ink sketch"), "ink sketch", "empty field");
-    assert.strictEqual(mlPrependWords("photo", ""), "photo", "nothing to add");
-    assert.strictEqual(mlPrependWords("Ink Sketch, photo", "ink sketch, crosshatch"), "crosshatch, Ink Sketch, photo", "words already there are not repeated");
-    assert.strictEqual(mlPrependWords("a man walks.", "ink sketch"), "ink sketch, a man walks.", "sentence caption");
 }
 
 console.log("fields.js: all assertions passed");

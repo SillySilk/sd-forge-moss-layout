@@ -41,15 +41,3 @@ function mlSplitLoraPick(text) {
     if (!m) return { tag: s, trigger: "" };
     return { tag: m[1], trigger: m[2].trim().replace(/^[,\s]+|[,\s]+$/g, "") };
 }
-
-// put comma-separated words at the front of a field, skipping words it already holds
-function mlPrependWords(current, words) {
-    const field = String(current || "").trim();
-    const have = new Set(field.split(",").map((w) => w.trim().toLowerCase()).filter(Boolean));
-    const add = String(words || "")
-        .split(",")
-        .map((w) => w.trim())
-        .filter((w) => w && !have.has(w.toLowerCase()));
-    if (!add.length) return field;
-    return field ? `${add.join(", ")}, ${field}` : add.join(", ");
-}

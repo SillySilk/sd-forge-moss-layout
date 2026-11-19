@@ -837,32 +837,20 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         loraModal.classList.add("ml-hidden");
     }
 
-    // trigger words go to the front of a field (the prompt reads them first); the tag itself can sit anywhere
-    function prependWords(field, words) {
-        const next = mlPrependWords(field.value, words);
-        if (next === field.value.trim()) return;
-        field.value = next;
-        field.dispatchEvent(new Event("input", { bubbles: true }));
-        autoGrow(field);
-    }
-
-    // summary pick: tag in Extra, trigger words at the front of Meta, the first thing in the exported prompt
+    // only the <lora:...> tag is inserted; the LoRA's trigger words are dropped (they often add unhelpful tags)
+    // summary pick: tag in Extra
     loraBtn.addEventListener("click", () =>
         openLoraPicker((pick) => {
-            const { tag, trigger } = mlSplitLoraPick(pick);
-            appendTag(sumExtra, tag);
-            if (trigger) prependWords(sumMeta, trigger);
+            appendTag(sumExtra, mlSplitLoraPick(pick).tag);
         }),
     );
     // shared by the list row and the canvas box; the row's input event keeps item.caption and the box in step
-    // item pick: trigger words open the item's caption, the tag goes at its end
+    // item pick: the tag goes at the end of the item's caption
     function pickLoraForItem(item) {
         openLoraPicker((pick) => {
             const input = listRefs.get(item.id)?.captionInput;
             if (!input) return;
-            const { tag, trigger } = mlSplitLoraPick(pick);
-            appendTag(input, tag);
-            if (trigger) prependWords(input, trigger);
+            appendTag(input, mlSplitLoraPick(pick).tag);
         });
     }
 
