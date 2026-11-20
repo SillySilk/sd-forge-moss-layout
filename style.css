@@ -1540,3 +1540,31 @@ button.ml-remove:hover {
         padding-inline: 8px;
     }
 }
+
+/* a text item's words: several lines tall from the start, scrolls, drag the corner for more */
+.ml-root textarea.ml-item-text {
+    display: block;
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 7.5em;
+    padding: 6px 9px;
+    background: var(--input-background-fill);
+    color: var(--body-text-color);
+    border: 1px solid var(--input-border-color);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: inherit;
+    line-height: 1.4;
+    resize: vertical;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+.ml-root textarea.ml-item-text:hover {
+    border-color: var(--input-border-color-hover);
+}
+.ml-root textarea.ml-item-text:focus {
+    outline: none;
+    border-color: var(--input-border-color-focus);
+    box-shadow: 0 0 0 3px var(--color-accent-soft);
+}

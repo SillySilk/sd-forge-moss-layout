@@ -1562,7 +1562,8 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
 
         let textInput = null;
         if (item.label === "text") {
-            textInput = h("input", { type: "text", class: "ml-item-text", placeholder: "text", value: item.text });
+            // the words drawn in the image: edited most, so a tall box that scrolls and can be dragged taller
+            textInput = h("textarea", { class: "ml-item-text", placeholder: "text", rows: "6", value: item.text });
             textInput.addEventListener("input", () => {
                 item.text = textInput.value;
                 recordHistory(`text:${item.id}`);
