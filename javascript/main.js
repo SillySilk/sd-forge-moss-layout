@@ -664,10 +664,13 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     const loraFolder = h("select", { class: "ml-lora-folder", title: "Active Lora folder" });
     const loraClose = h("button", { type: "button", class: "ml-dialog-close", title: "Close" }, ["×"]);
     const loraGrid = h("div", { class: "extra-network-cards ml-lora-grid" });
+    const loraDirs = h("div", { class: "ml-lora-dirs" }); // the LoRA tab's subfolder buttons
+    let loraSub = ""; // chosen subfolder, as the LoRA tab writes it (`Body\`); "" = all
     const loraModal = h("div", { class: "ml-modal ml-hidden" }, [
         h("div", { class: "ml-dialog ml-lora-dialog" }, [
             loraClose,
             h("div", { class: "ml-row ml-lora-controls" }, [loraSearch, loraFolder]),
+            loraDirs,
             h("div", { class: "extra-network-pane ml-lora-pane" }, [loraGrid]), // borrows the LoRA tab's card styling
         ]),
     ]);
@@ -753,12 +756,37 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     const loraCardsHtml = () => document.getElementById("txt2img_lora_cards_html");
     const loraFolderSource = () => document.querySelector("#txt2img_lora_folder_select");
 
+    // the same subfolder buttons the LoRA tab shows above its cards ("all", "Body\\", ...)
+    function renderLoraDirs() {
+        loraDirs.textContent = "";
+        const subs = [...(document.getElementById("txt2img_lora_dirs")?.querySelectorAll("button") ?? [])]
+            .map((b) => (b.classList.contains("search-all") ? "" : b.textContent.trim()));
+        if (!subs.includes(loraSub)) loraSub = "";
+        loraDirs.classList.toggle("ml-hidden", subs.length === 0);
+        for (const sub of subs) {
+            loraDirs.appendChild(h("button", {
+                type: "button",
+                class: `ml-lora-dir${sub === loraSub ? " ml-lora-dir-on" : ""}`,
+                onclick: () => {
+                    loraSub = sub;
+                    renderLoraDirs();
+                    renderLoraCards();
+                },
+            }, [sub || "all"]));
+        }
+    }
+
+    // the card's path below the LoRA root ("LORAS\Moss\Body\name.safetensors"), as the tab's search uses it
+    const loraCardPath = (card) => (card.querySelector(".search_terms")?.textContent ?? "").toLowerCase().replace(/\//g, "\\");
+
     function renderLoraCards() {
         loraGrid.textContent = "";
         const query = loraSearch.value.trim().toLowerCase();
+        const sub = loraSub && "\\" + loraSub.toLowerCase().replace(/\//g, "\\").replace(/^\\+/, "");
         const cards = loraCardsHtml()?.querySelectorAll(".card") ?? [];
         for (const card of cards) {
             if (query && !card.textContent.toLowerCase().includes(query)) continue;
+            if (sub && !loraCardPath(card).includes(sub)) continue;
             const clone = card.cloneNode(true);
             clone.removeAttribute("onclick");
             clone.removeAttribute("style");
@@ -806,7 +834,9 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     }
 
     const loraObserver = new MutationObserver(() => {
-        if (!loraModal.classList.contains("ml-hidden")) renderLoraCards();
+        if (loraModal.classList.contains("ml-hidden")) return;
+        renderLoraDirs();
+        renderLoraCards();
     });
 
     let loraTarget = null; // where the picked tag goes: the summary's Extra or an item's caption
@@ -814,6 +844,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     function openLoraPicker(onPick) {
         loraTarget = onPick;
         syncLoraFolders();
+        renderLoraDirs();
         renderLoraCards();
         const cardsHtml = loraCardsHtml();
         if (cardsHtml) loraObserver.observe(cardsHtml, { childList: true, subtree: true });
@@ -845,9 +876,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     }
 
     loraClose.addEventListener("click", closeLoraPicker);
-    loraModal.addEventListener("click", (ev) => {
-        if (ev.target === loraModal) closeLoraPicker();
-    });
+    // no close on a click beside the window: it is full screen, and a stray click lost the pick (× or Esc closes)
     loraSearch.addEventListener("input", renderLoraCards);
     loraFolder.addEventListener("change", () => {
         const source = loraFolderSource();

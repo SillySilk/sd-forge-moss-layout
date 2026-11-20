@@ -694,9 +694,29 @@ button.ml-remove:hover {
     color: var(--input-placeholder-color);
 }
 
+/* the LoRA picker fills the window, like the LoRA tab's own space */
+.ml-modal:has(> .ml-lora-dialog) {
+    padding: 12px;
+}
 .ml-dialog.ml-lora-dialog {
-    width: min(1200px, 100%);
-    height: min(90%, 900px);
+    width: 100%;
+    height: 100%;
+}
+
+/* subfolder buttons, as above the LoRA tab's cards */
+.ml-lora-dirs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 0 0 auto;
+}
+.ml-root button.ml-lora-dir {
+    padding: 5px 12px;
+}
+.ml-root button.ml-lora-dir.ml-lora-dir-on {
+    background: var(--button-primary-background-fill, #2563eb);
+    border-color: var(--button-primary-border-color, transparent);
+    color: var(--button-primary-text-color, #fff);
 }
 
 .ml-lora-controls {
