@@ -1,0 +1,52 @@
+{
+  "width": 1024,
+  "height": 1024,
+  "bbox_coord_space": "abs",
+  "bbox_format": "xyxy",
+  "summary": {
+    "canvas": "multi_panel",
+    "caption": "A comic page with four panels: four equal panels in a two by two grid. Each panel has a thin black border, and the panels are separated by narrow white gutters. Panel 1 is the top left of the page. Panel 2 is the top right of the page. Panel 3 is the bottom left of the page. Panel 4 is the bottom right of the page. The panels are read in order from panel 1 to panel 4. [FILL IN: the story across the panels, the characters, the setting and the art style.]"
+  },
+  "items": [
+    {
+      "label": "object",
+      "caption": "Panel 1, the top left of the page: [FILL IN: what this panel shows]",
+      "bbox": [
+        24,
+        24,
+        504,
+        504
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Panel 2, the top right of the page: [FILL IN: what this panel shows]",
+      "bbox": [
+        520,
+        24,
+        1000,
+        504
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Panel 3, the bottom left of the page: [FILL IN: what this panel shows]",
+      "bbox": [
+        24,
+        520,
+        504,
+        1000
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Panel 4, the bottom right of the page: [FILL IN: what this panel shows]",
+      "bbox": [
+        520,
+        520,
+        1000,
+        1000
+      ]
+    }
+  ]
+}

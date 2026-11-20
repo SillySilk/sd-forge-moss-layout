@@ -6,5 +6,6 @@ __pycache__/
 /characters/deleted/
 .playwright-mcp/
 
-# saved layouts are personal; the folder is made on first start
-/JSONscenes/
+# saved layouts are personal; only the panel templates (tools/make_panel_templates.py) ship
+/JSONscenes/*
+!/JSONscenes/Templates/

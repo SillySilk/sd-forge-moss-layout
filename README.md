@@ -26,6 +26,8 @@ Updates: **Extensions → Installed → Check for updates**.
 - **Reference image** under the boxes: load a file, drop or paste (Ctrl+V) one onto the canvas, or take txt2img's finished image or img2img's input image (img2img's result if its input is empty; reading the input needs a Forge build that supports it, see Notes).
 - **+ LoRA** picker for Extra and for each box.
 - **Load the prompt** that is in txt2img back into the editor; **autosave** keeps the last session in the browser.
+- **Save JSON / Load JSON** keep layouts in the extension's `JSONscenes/` folder (subfolders allowed); Load opens the Windows Open dialog there.
+- **Panel templates:** `JSONscenes/Templates/` has 15 multi-panel page layouts (2 to 5 panels). Each names its panels and says where they sit; fill in the `[FILL IN ...]` parts.
 - A **Thing-o-Matic** styled side panel (gold and ember buttons, blackletter titles).
 
 ## MOSS-Image fields it writes
@@ -43,6 +45,7 @@ Updates: **Extensions → Installed → Check for updates**.
 
 Character files live in `characters/`. Only `examples.jbcast` ships with the extension; every other `.jbcast`
 is ignored by git, so updating never overwrites or uploads your own. Deleted files go to `characters/deleted/`.
+Saved layouts in `JSONscenes/` are ignored the same way; only `JSONscenes/Templates/` ships.
 
 ## Notes
 

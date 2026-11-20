@@ -1,0 +1,32 @@
+{
+  "width": 832,
+  "height": 1216,
+  "bbox_coord_space": "abs",
+  "bbox_format": "xyxy",
+  "summary": {
+    "canvas": "multi_panel",
+    "caption": "A comic page with two panels: two equal panels, one above the other. Each panel has a thin black border, and the panels are separated by narrow white gutters. Panel 1 is the top half of the page. Panel 2 is the bottom half of the page. The panels are read in order from panel 1 to panel 2. [FILL IN: the story across the panels, the characters, the setting and the art style.]"
+  },
+  "items": [
+    {
+      "label": "object",
+      "caption": "Panel 1, the top half of the page: [FILL IN: what this panel shows]",
+      "bbox": [
+        24,
+        24,
+        808,
+        600
+      ]
+    },
+    {
+      "label": "object",
+      "caption": "Panel 2, the bottom half of the page: [FILL IN: what this panel shows]",
+      "bbox": [
+        24,
+        616,
+        808,
+        1192
+      ]
+    }
+  ]
+}
