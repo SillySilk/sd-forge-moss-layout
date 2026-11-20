@@ -1486,6 +1486,10 @@ button.ml-remove:hover {
 }
 .ml-root .ml-side .ml-res-row > .ml-set-res {
     margin-left: auto;
+    /* never narrower than its label: in a narrow panel it moves to its own line instead of spilling */
+    flex: 1 0 auto;
+    min-width: max-content;
+    white-space: nowrap;
 }
 
 /* tag x and colour swatches keep their own small size inside the panel sections */
@@ -1561,16 +1565,29 @@ button.ml-remove:hover {
     color: var(--block-info-text-color);
 }
 
-/* Prompt & size buttons: the label shrinks with the row instead of spilling past the button */
-.ml-root .ml-prompt-size > .ml-row {
-    container-type: inline-size;
+/* Prompt & size buttons: four equal columns whose labels shrink a little with the panel,
+   then two rows of two once four would get too small to read. Never wider than the button. */
+.ml-root .ml-side .ml-section.ml-prompt-size {
+    container: ml-prompt / inline-size;
 }
-.ml-root .ml-side .ml-section.ml-prompt-size > .ml-row > button { /* outranks the side panel's 11px button rule */
-    flex: 1 1 0;
+.ml-root .ml-side .ml-section.ml-prompt-size > .ml-prompt-btns {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.ml-root .ml-side .ml-section.ml-prompt-size > .ml-prompt-btns > button { /* outranks the side panel's 11px button rule */
     min-width: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     padding-inline: clamp(3px, 1.2cqi, 8px);
-    font-size: clamp(7px, 2.6cqi, 11px);
+    font-size: clamp(9px, 2.6cqi, 11px);
+}
+@container ml-prompt (max-width: 400px) {
+    .ml-root .ml-side .ml-section.ml-prompt-size > .ml-prompt-btns {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .ml-root .ml-side .ml-section.ml-prompt-size > .ml-prompt-btns > button {
+        font-size: 11px;
+        padding-inline: 8px;
+    }
 }

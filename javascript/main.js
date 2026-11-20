@@ -292,7 +292,7 @@ onUiLoaded(() => {
     // Save/Load split into Prompt (beside Resolution) and Reference image (full width below)
     const promptSection = h("div", { class: "ml-section ml-save ml-prompt-size" }, [
         h("div", { class: "ml-section-title" }, ["Prompt & size"]), // resolution folded in here
-        h("div", { class: "ml-row" }, [loadPromptBtn, fromT2IPromptBtn, saveJsonBtn, loadJsonBtn]), // + From txt2img
+        h("div", { class: "ml-row ml-prompt-btns" }, [loadPromptBtn, fromT2IPromptBtn, saveJsonBtn, loadJsonBtn]), // + From txt2img
         promptMsg,
         ...resolutionRows,
     ]);
