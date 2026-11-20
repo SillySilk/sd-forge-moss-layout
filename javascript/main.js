@@ -316,8 +316,6 @@ onUiLoaded(() => {
         ]),
     ]);
 
-    const fileInput = h("input", { type: "file", accept: ".json,application/json", class: "ml-file" });
-    fileInput.style.display = "none";
     const imageInput = h("input", { type: "file", accept: "image/*", class: "ml-file" });
     imageInput.style.display = "none";
 
@@ -676,17 +674,9 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
 
     // saved layouts in the extension's JSONscenes/ folder (scripts/moss_layout.py)
     const SCENE_API = "/moss_layout/scenes";
-    const sceneSearch = h("input", { type: "text", class: "ml-scene-search", placeholder: "Search..." });
-    const sceneOtherBtn = h("button", { type: "button", class: "ml-scene-other", title: "Load a .json file from anywhere on this PC" }, ["Other file…"]);
-    const sceneClose = h("button", { type: "button", class: "ml-dialog-close", title: "Close" }, ["×"]);
-    const sceneList = h("div", { class: "ml-scene-list" });
-    const sceneModal = h("div", { class: "ml-modal ml-hidden" }, [
-        h("div", { class: "ml-dialog ml-scene-dialog" }, [sceneClose, h("div", { class: "ml-row ml-scene-controls" }, [sceneSearch, sceneOtherBtn]), sceneList]),
-    ]);
-    let sceneFiles = [];
     let currentScene = ""; // path of the last scene loaded or saved, offered as the Save name
 
-    const root = h("div", { class: "ml-root" }, [canvasSection, side, modal, loraModal, sceneModal, fileInput, imageInput, charImportInput]); // + charImportInput
+    const root = h("div", { class: "ml-root" }, [canvasSection, side, modal, loraModal, imageInput, charImportInput]); // + charImportInput
 
     tab.textContent = "";
     tab.appendChild(root);
@@ -906,7 +896,6 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
                 data = await sceneRequest("/save", { path: name, content, overwrite: true });
             }
             currentScene = data.path;
-            sceneFiles = data.files;
             promptMessage(`Saved ${data.path}`);
         } catch (e) {
             flash(saveJsonBtn);
@@ -914,85 +903,32 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         }
     });
 
-    function renderSceneList() {
-        sceneList.textContent = "";
-        const query = sceneSearch.value.trim().toLowerCase();
-        const shown = sceneFiles.filter((f) => !query || f.toLowerCase().includes(query));
-        if (!shown.length) {
-            sceneList.appendChild(h("div", { class: "ml-scene-empty" }, [sceneFiles.length ? "Nothing matches." : "No saved layouts in JSONscenes yet."]));
-            return;
-        }
-        let folder = null;
-        for (const f of shown) {
-            const cut = f.lastIndexOf("/");
-            const dir = cut < 0 ? "" : f.slice(0, cut);
-            if (dir !== folder) {
-                folder = dir;
-                if (dir) sceneList.appendChild(h("div", { class: "ml-scene-folder" }, [dir]));
-            }
-            const label = f.slice(cut + 1).replace(/\.json$/i, "");
-            sceneList.appendChild(h("button", { type: "button", class: `ml-scene-item${dir ? " ml-scene-nested" : ""}${f === currentScene ? " ml-scene-current" : ""}`, title: f, onclick: () => loadScene(f) }, [label]));
-        }
-    }
-
-    async function loadScene(path) {
-        try {
-            const data = await sceneRequest(`/file?path=${encodeURIComponent(path)}`);
-            loadDraft(mlDecompilePrompt(data.content, NaN, NaN));
-            currentScene = data.path;
-            closeScenePicker();
-            promptMessage(`Loaded ${data.path}`);
-        } catch (e) {
-            loadJsonBtn.classList.add("ml-invalid");
-            promptMessage(`Couldn't load ${path}: ${e.message}`, true);
-        }
-    }
-
-    function closeScenePicker() {
-        sceneModal.classList.add("ml-hidden");
-    }
-
+    // Load JSON: the Windows Open dialog, starting in JSONscenes (or the last scene's subfolder)
+    let picking = false;
     loadJsonBtn.addEventListener("click", async () => {
+        if (picking) return; // the dialog is already open, perhaps behind the browser
+        picking = true;
         loadJsonBtn.classList.remove("ml-invalid");
+        loadJsonBtn.disabled = true;
         try {
-            sceneFiles = (await sceneRequest("/list")).files;
-        } catch (e) {
-            flash(loadJsonBtn);
-            promptMessage(`Couldn't list JSONscenes: ${e.message}`, true);
-            return;
-        }
-        sceneSearch.value = "";
-        renderSceneList();
-        sceneModal.classList.remove("ml-hidden");
-        sceneSearch.focus();
-    });
-    sceneSearch.addEventListener("input", renderSceneList);
-    sceneClose.addEventListener("click", closeScenePicker);
-    sceneModal.addEventListener("click", (ev) => {
-        if (ev.target === sceneModal) closeScenePicker();
-    });
-    sceneOtherBtn.addEventListener("click", () => {
-        closeScenePicker();
-        fileInput.value = "";
-        fileInput.click();
-    });
-
-    fileInput.addEventListener("change", () => {
-        const file = fileInput.files?.[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.addEventListener("load", () => {
+            const data = await sceneRequest(`/pick?start=${encodeURIComponent(currentScene)}`);
+            if (data.cancelled) return;
             try {
-                const draft = mlDecompilePrompt(reader.result, NaN, NaN);
-                loadDraft(draft);
-                currentScene = "";
-                promptMessage(`Loaded ${file.name}`);
+                loadDraft(mlDecompilePrompt(data.content, NaN, NaN));
             } catch (e) {
                 loadJsonBtn.classList.add("ml-invalid");
-                promptMessage(`Couldn't load ${file.name}: ${e.message}`, true);
+                promptMessage(`Couldn't load ${data.name}: ${e.message}`, true);
+                return;
             }
-        });
-        reader.readAsText(file);
+            currentScene = data.path; // "" for a file outside JSONscenes
+            promptMessage(`Loaded ${data.path || data.name}`);
+        } catch (e) {
+            flash(loadJsonBtn);
+            promptMessage(`Couldn't open the file dialog: ${e.message}`, true);
+        } finally {
+            picking = false;
+            loadJsonBtn.disabled = false;
+        }
     });
 
     // ----- background image -----
@@ -1986,7 +1922,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     // Ctrl+V with an image on the clipboard: the tab is open, no window is up, and the focus is not in a text field
     document.addEventListener("paste", (ev) => {
         if (!root.isConnected || root.offsetParent === null) return;
-        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden") || !sceneModal.classList.contains("ml-hidden")) return;
+        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden")) return;
         const t = ev.target;
         if (!(t === document.body || root.contains(t)) || isTyping(t)) return;
         const file = [...(ev.clipboardData?.items ?? [])].filter((it) => it.kind === "file").map((it) => it.getAsFile()).find(isImageFile);
@@ -2003,17 +1939,12 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
             ev.preventDefault();
             return;
         }
-        if (ev.key === "Escape" && !sceneModal.classList.contains("ml-hidden")) {
-            closeScenePicker();
-            ev.preventDefault();
-            return;
-        }
         if (ev.key === "Escape" && !modal.classList.contains("ml-hidden")) {
             closeDialog();
             ev.preventDefault();
             return;
         }
-        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden") || !sceneModal.classList.contains("ml-hidden")) return;
+        if (!modal.classList.contains("ml-hidden") || !loraModal.classList.contains("ml-hidden")) return;
         const t = ev.target;
         if (!(t === document.body || root.contains(t)) || isTyping(t)) return;
         const ctrl = ev.ctrlKey || ev.metaKey;

@@ -54,5 +54,45 @@ class SceneTests(unittest.TestCase):
         self.assertFalse(os.path.exists(os.path.join(self.tmp.name, "x.json")))
 
 
+    # Load JSON's Windows Open dialog (the dialog itself is replaced by a stand-in)
+    def test_pick_starts_in_scenes_folder(self):
+        seen = []
+        self.store.pick("", ask=lambda d: seen.append(d) or "")
+        self.assertEqual(seen, [self.store.folder])
+
+    def test_pick_starts_in_last_scene_subfolder(self):
+        self.store.save("Story A/01 Opening", LAYOUT)
+        seen = []
+        self.store.pick("Story A/01 Opening.json", ask=lambda d: seen.append(d) or "")
+        self.assertEqual(seen, [os.path.join(self.store.folder, "Story A")])
+
+    def test_pick_falls_back_when_subfolder_is_gone(self):
+        seen = []
+        self.store.pick("Gone/01.json", ask=lambda d: seen.append(d) or "")
+        self.assertEqual(seen, [self.store.folder])
+
+    def test_pick_cancelled(self):
+        self.assertEqual(self.store.pick("", ask=lambda d: ""), {"cancelled": True})
+
+    def test_pick_inside_folder_gives_scene_path(self):
+        self.store.save("Story A/01 Opening", LAYOUT)
+        full = os.path.join(self.store.folder, "Story A", "01 Opening.json")
+        data = self.store.pick("", ask=lambda d: full)
+        self.assertEqual(data["path"], "Story A/01 Opening.json")
+        self.assertEqual(data["name"], "01 Opening.json")
+        self.assertIn("red ball", data["content"])
+
+    def test_pick_outside_folder_has_no_scene_path(self):
+        outside = os.path.join(self.tmp.name, "elsewhere.json")
+        with open(outside, "w", encoding="utf-8") as f:
+            f.write(LAYOUT)
+        data = self.store.pick("", ask=lambda d: outside)
+        self.assertEqual(data["path"], "")
+        self.assertEqual(data["name"], "elsewhere.json")
+
+    def test_pick_unreadable_file(self):
+        with self.assertRaises(SceneError):
+            self.store.pick("", ask=lambda d: os.path.join(self.tmp.name, "missing.json"))
+
 if __name__ == "__main__":
     unittest.main()

@@ -3,6 +3,8 @@
 import json
 import os
 import re
+import subprocess
+import sys
 import tempfile
 
 EXT = ".json"
@@ -38,6 +40,34 @@ def normalize_path(path: str) -> str:
         if p in ("", ".", "..") or not PART_RE.match(p) or p.endswith((".", " ")) or p.split(".")[0].lower() in RESERVED:
             raise SceneError(f"'{p}' can't be used as a name. Avoid < > : \" \\ | ? * and a trailing dot.")
     return "/".join(parts) + EXT
+
+
+# Runs in its own process: Tk must own its thread, and Forge's server threads are not that.
+_PICKER = r"""
+import json, sys, tkinter as tk
+from tkinter import filedialog
+root = tk.Tk()
+root.withdraw()
+root.attributes("-topmost", True)  # in front of the browser
+root.lift()
+root.focus_force()
+path = filedialog.askopenfilename(parent=root, title="Load JSON", initialdir=sys.argv[1],
+                                  filetypes=[("Layouts", "*.json"), ("All files", "*.*")])
+root.destroy()
+print(json.dumps(path or ""))
+"""
+
+
+def ask_open_file(initial_dir: str) -> str:
+    """Show the Windows Open dialog at initial_dir; the chosen file's full path, or "" if cancelled."""
+    flags = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
+    done = subprocess.run([sys.executable, "-c", _PICKER, initial_dir], capture_output=True, text=True, creationflags=flags)
+    lines = done.stdout.strip().splitlines()
+    if done.returncode != 0 or not lines:
+        why = (done.stderr.strip().splitlines() or [f"exit code {done.returncode}"])[-1]
+        raise SceneError(f"The file dialog could not open: {why}")
+    path = json.loads(lines[-1])
+    return os.path.normpath(path) if path else ""
 
 
 class SceneStore:
@@ -95,3 +125,33 @@ class SceneStore:
                 os.remove(tmp)
             raise
         return {"path": rel, "files": self.list()}
+
+    def start_dir(self, path: str = "") -> str:
+        """The folder the Open dialog starts in: that of the last scene if it still exists, else JSONscenes."""
+        try:
+            folder = os.path.dirname(self._path(normalize_path(path))) if path else self.folder
+        except SceneError:
+            folder = self.folder
+        return folder if os.path.isdir(folder) else self.folder
+
+    def read_file(self, full: str) -> dict:
+        """Read a file picked anywhere on the PC. path is its JSONscenes path, or "" when it lies outside."""
+        full = os.path.abspath(full)
+        try:
+            with open(full, encoding="utf-8") as f:
+                content = f.read()
+        except OSError as e:
+            raise SceneError(f"{os.path.basename(full)} could not be read: {e}") from e
+        try:
+            inside = os.path.commonpath([full, self.folder]) == self.folder
+        except ValueError:  # another drive
+            inside = False
+        rel = os.path.relpath(full, self.folder).replace("\\", "/") if inside else ""
+        return {"path": rel, "name": os.path.basename(full), "content": content}
+
+    def pick(self, start: str = "", ask=ask_open_file) -> dict:
+        """Let the user choose a file in the Windows Open dialog, starting in JSONscenes."""
+        full = ask(self.start_dir(start))
+        if not full:
+            return {"cancelled": True}
+        return self.read_file(full)

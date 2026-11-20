@@ -1503,57 +1503,6 @@ button.ml-remove:hover {
     background: transparent;
 }
 
-/* ----- saved layouts (JSONscenes) picker ----- */
-
-.ml-dialog.ml-scene-dialog {
-    width: min(640px, 100%);
-}
-
-.ml-scene-controls .ml-scene-search {
-    flex: 1 1 auto;
-}
-
-.ml-scene-list {
-    flex: 1 1 auto;
-    min-height: 0;
-    overflow-y: auto;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-}
-
-.ml-scene-folder {
-    margin-top: 10px;
-    font-weight: 600;
-    color: var(--body-text-color-subdued);
-}
-
-.ml-root button.ml-scene-item {
-    justify-content: flex-start;
-    text-align: left;
-    padding: 6px 10px;
-    border: 1px solid transparent;
-    border-radius: 6px;
-    background: transparent;
-}
-
-.ml-root button.ml-scene-item:hover {
-    background: var(--background-fill-secondary);
-    border-color: var(--border-color-primary);
-}
-
-.ml-root button.ml-scene-item.ml-scene-nested {
-    margin-left: 14px;
-}
-
-.ml-root button.ml-scene-item.ml-scene-current {
-    border-color: var(--color-accent);
-}
-
-.ml-scene-empty {
-    color: var(--body-text-color-subdued);
-}
-
 /* drop an image onto the canvas */
 .ml-canvas.ml-drop-target {
     outline: 3px dashed var(--color-accent);

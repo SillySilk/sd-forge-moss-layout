@@ -120,6 +120,10 @@ def scenes_api(_demo: gr.Blocks, app: FastAPI):
     def read_scene(path: str):
         return _scene_call(store.read, path)
 
+    @app.get(f"{base}/pick")  # Load JSON: the Windows Open dialog, starting in JSONscenes
+    def pick_scene(start: str = ""):
+        return _scene_call(store.pick, start)
+
     @app.post(f"{base}/save")
     def save_scene(body: SceneBody):
         return _scene_call(store.save, body.path, body.content, body.overwrite)

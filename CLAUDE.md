@@ -28,7 +28,7 @@ If something personal has already gone public, stop and tell the owner. Don't qu
 
 - `scripts/moss_layout.py`: the tab (`MOSS Layout`, DOM id `tab_moss-layout`) and the character routes `/moss_layout/characters/*`.
 - `lib_moss_layout/characters.py`: the `.jbcast` store.
-- `lib_moss_layout/scenes.py`: Save JSON / Load JSON read and write `JSONscenes/` (subfolders allowed, routes `/moss_layout/scenes/*`). The folder is gitignored: saved layouts are personal.
+- `lib_moss_layout/scenes.py`: Save JSON / Load JSON read and write `JSONscenes/` (subfolders allowed, routes `/moss_layout/scenes/*`). The folder is gitignored: saved layouts are personal. Load JSON opens the real Windows Open dialog through `/moss_layout/scenes/pick`, which runs Tk's `askopenfilename` in a child process (Tk must own its thread) starting in `JSONscenes/` or the last scene's subfolder. The dialog shows on the PC running Forge, so it only suits local use.
 - `javascript/main.js`: the whole UI; helpers in `editing.js`, `fields.js`, `characters.js`; `compile.js` / `decompile.js` turn a layout into the MOSS prompt and back.
 - Every name is prefixed `ml` / `ml-` (CSS classes, `--ml-*` variables, localStorage keys, JS globals) so this runs beside Forge Neo's stock JSON Builder (`jb-`, `compilePrompt`). Keep new names prefixed.
 - Fork-only hooks must stay optional: `window.forgeCanvasInstances`, `#txt2img_lora_folder_select`.
