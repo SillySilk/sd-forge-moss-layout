@@ -1,6 +1,6 @@
 {
-  "width": 832,
-  "height": 1216,
+  "width": 1280,
+  "height": 1280,
   "bbox_coord_space": "abs",
   "bbox_format": "xyxy",
   "summary": {
@@ -14,8 +14,8 @@
       "bbox": [
         24,
         24,
-        808,
-        405
+        1256,
+        427
       ]
     },
     {
@@ -23,19 +23,19 @@
       "caption": "Panel 2, the middle left of the page: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        421,
-        408,
-        795
+        443,
+        632,
+        837
       ]
     },
     {
       "label": "object",
       "caption": "Panel 3, the middle right of the page: [FILL IN: what this panel shows]",
       "bbox": [
-        424,
-        421,
-        808,
-        795
+        648,
+        443,
+        1256,
+        837
       ]
     },
     {
@@ -43,19 +43,19 @@
       "caption": "Panel 4, the bottom left of the page: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        811,
-        408,
-        1192
+        853,
+        632,
+        1256
       ]
     },
     {
       "label": "object",
       "caption": "Panel 5, the bottom right of the page: [FILL IN: what this panel shows]",
       "bbox": [
-        424,
-        811,
-        808,
-        1192
+        648,
+        853,
+        1256,
+        1256
       ]
     }
   ]

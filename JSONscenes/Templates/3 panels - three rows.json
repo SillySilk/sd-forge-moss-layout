@@ -1,6 +1,6 @@
 {
-  "width": 832,
-  "height": 1216,
+  "width": 1280,
+  "height": 1280,
   "bbox_coord_space": "abs",
   "bbox_format": "xyxy",
   "summary": {
@@ -14,8 +14,8 @@
       "bbox": [
         24,
         24,
-        808,
-        405
+        1256,
+        427
       ]
     },
     {
@@ -23,9 +23,9 @@
       "caption": "Panel 2, the middle row of the page: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        421,
-        808,
-        795
+        443,
+        1256,
+        837
       ]
     },
     {
@@ -33,9 +33,9 @@
       "caption": "Panel 3, the bottom row of the page: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        811,
-        808,
-        1192
+        853,
+        1256,
+        1256
       ]
     }
   ]

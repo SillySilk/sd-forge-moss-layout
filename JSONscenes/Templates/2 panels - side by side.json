@@ -1,6 +1,6 @@
 {
-  "width": 1216,
-  "height": 832,
+  "width": 1280,
+  "height": 1280,
   "bbox_coord_space": "abs",
   "bbox_format": "xyxy",
   "summary": {
@@ -14,18 +14,18 @@
       "bbox": [
         24,
         24,
-        600,
-        808
+        632,
+        1256
       ]
     },
     {
       "label": "object",
       "caption": "Panel 2, the right half of the page: [FILL IN: what this panel shows]",
       "bbox": [
-        616,
+        648,
         24,
-        1192,
-        808
+        1256,
+        1256
       ]
     }
   ]

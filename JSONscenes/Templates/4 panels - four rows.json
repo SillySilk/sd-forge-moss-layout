@@ -1,6 +1,6 @@
 {
-  "width": 832,
-  "height": 1216,
+  "width": 1280,
+  "height": 1280,
   "bbox_coord_space": "abs",
   "bbox_format": "xyxy",
   "summary": {
@@ -14,8 +14,8 @@
       "bbox": [
         24,
         24,
-        808,
-        308
+        1256,
+        324
       ]
     },
     {
@@ -23,9 +23,9 @@
       "caption": "Panel 2, the second row from the top: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        324,
-        808,
-        600
+        340,
+        1256,
+        632
       ]
     },
     {
@@ -33,9 +33,9 @@
       "caption": "Panel 3, the third row from the top: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        616,
-        808,
-        892
+        648,
+        1256,
+        940
       ]
     },
     {
@@ -43,9 +43,9 @@
       "caption": "Panel 4, the last row, at the bottom of the page: [FILL IN: what this panel shows]",
       "bbox": [
         24,
-        908,
-        808,
-        1192
+        956,
+        1256,
+        1256
       ]
     }
   ]
