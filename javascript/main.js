@@ -375,7 +375,8 @@ onUiLoaded(() => {
         h("div", { class: "ml-subpanel ml-char-use" }, [
             h("div", { class: "ml-subpanel-title" }, ["Add to prompt"]),
             h("div", { class: "ml-row" }, [charFileSelect, charFileTrash]),
-            h("div", { class: "ml-row" }, [charSelect, charAddBtn, charBoxBtn]),
+            h("div", { class: "ml-row" }, [charSelect]), // the name gets the full width
+            h("div", { class: "ml-row" }, [charAddBtn, charBoxBtn]),
             h("div", { class: "ml-row" }, [charNewCharBtn]), // under the character dropdown, visible while the editor is folded
         ]),
         charEditor,
