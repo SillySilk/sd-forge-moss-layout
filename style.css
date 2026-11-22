@@ -1588,21 +1588,3 @@ button.ml-remove:hover {
     border-color: var(--input-border-color-focus);
     box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
-
-/* the character editor's LoRA row: chips of saved <lora:...> tags, then the picker button */
-.ml-char-lora-row {
-    align-items: center;
-    flex-wrap: nowrap;
-}
-.ml-char-loras {
-    flex: 1;
-    min-width: 0;
-    flex-wrap: wrap;
-}
-.ml-char-loras .ml-chip {
-    word-break: break-all;
-}
-.ml-char-loras-none {
-    opacity: 0.6;
-    font-size: 12px;
-}

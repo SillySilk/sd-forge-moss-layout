@@ -34,7 +34,6 @@ class SaveBody(BaseModel):
     description: str
     tags: list[str] = []  # optional MOSS tags / palette, cleaned by the store
     palette: list[str] = []
-    loras: list[str] = []  # <lora:...> tags, put into the box caption by "Add to box"
 
 
 class DeleteBody(BaseModel):
@@ -74,7 +73,7 @@ def characters_api(_demo: gr.Blocks, app: FastAPI):
 
     @app.post(f"{base}/save")
     def save_character(body: SaveBody):
-        return _call(store.save_character, body.name, body.abbr, body.full_name, body.description, body.tags, body.palette, body.loras)
+        return _call(store.save_character, body.name, body.abbr, body.full_name, body.description, body.tags, body.palette)
 
     @app.post(f"{base}/delete")
     def delete_character(body: DeleteBody):

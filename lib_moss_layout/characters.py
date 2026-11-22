@@ -1,5 +1,5 @@
 # character library for the MOSS Layout.
-# A .jbcast file is JSON: {"version": 1, "characters": [{"abbr", "name", "description", optional "tags", "palette", "loras"}]},
+# A .jbcast file is JSON: {"version": 1, "characters": [{"abbr", "name", "description", optional "tags", "palette"}]},
 # plus an optional "example": true that makes the file read-only.
 import json
 import os
@@ -12,12 +12,10 @@ VERSION = 1
 ABBR_RE = re.compile(r"^[A-Za-z0-9]{1,5}$")
 NAME_RE = re.compile(r"^[A-Za-z0-9 _-]{1,64}$")
 CHAR_KEYS = {"abbr", "name", "description"}
-OPTIONAL_KEYS = {"tags", "palette", "loras"}  # MOSS tags and #RRGGBB colours (copied into a box), <lora:...> tags (into the box)
+OPTIONAL_KEYS = {"tags", "palette"}  # MOSS tags and #RRGGBB colours, copied into a box by "To box"
 COLOUR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MAX_TAGS = 16
 MAX_COLOURS = 8
-LORA_RE = re.compile(r"^<lora:[^<>]+>$")
-MAX_LORAS = 8
 
 
 class CharacterError(Exception):
@@ -57,13 +55,10 @@ def _check_character(c: dict) -> dict:
             raise CharacterError(f"{abbr}: '{key}' must be a list.")
     tags = _unique([_clean(t) for t in c.get("tags") or [] if isinstance(t, str)], MAX_TAGS)
     palette = _unique([p.strip().upper() for p in c.get("palette") or [] if isinstance(p, str) and COLOUR_RE.match(p.strip())], MAX_COLOURS)
-    loras = _unique([_clean(t) for t in c.get("loras") or [] if isinstance(t, str) and LORA_RE.match(_clean(t))], MAX_LORAS)
     if tags:
         out["tags"] = tags
     if palette:
         out["palette"] = palette
-    if loras:
-        out["loras"] = loras
     return out
 
 
@@ -95,7 +90,7 @@ def validate_cast(data) -> dict:
     cleaned, seen = [], set()
     for c in chars:
         if not isinstance(c, dict) or not CHAR_KEYS <= set(c) <= CHAR_KEYS | OPTIONAL_KEYS:
-            raise CharacterError("Each character needs abbr, name and description, and may have tags, palette and loras.")
+            raise CharacterError("Each character needs abbr, name and description, and may have tags and palette.")
         c = _check_character(c)
         key = c["abbr"].lower()
         if key in seen:
@@ -169,10 +164,10 @@ class CharacterStore:
         self._write(file_name, data)
         return self._view(file_name, data)
 
-    def save_character(self, name: str, abbr: str, full_name: str, description: str, tags: list | None = None, palette: list | None = None, loras: list | None = None) -> dict:
+    def save_character(self, name: str, abbr: str, full_name: str, description: str, tags: list | None = None, palette: list | None = None) -> dict:
         file_name = normalize_name(name)
         data = self._writable(file_name)
-        new = _check_character({"abbr": abbr, "name": full_name, "description": description, "tags": tags, "palette": palette, "loras": loras})
+        new = _check_character({"abbr": abbr, "name": full_name, "description": description, "tags": tags, "palette": palette})
         chars = data["characters"]
         for i, c in enumerate(chars):
             if c["abbr"].lower() == new["abbr"].lower():

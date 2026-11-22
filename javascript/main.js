@@ -355,21 +355,6 @@ onUiLoaded(() => {
         h("div", { class: "ml-char-adv-field" }, [h("span", { class: "ml-fld-label" }, ["Palette"]), charPalette.el]),
     ]);
     const charAdv = h("div", { class: "ml-char-adv" }, [charAdvBtn, charAdvBody]);
-    // the character's LoRAs: saved with it, and put into the box's caption by "Add to box" (not by "Add to caption")
-    let charLoras = [];
-    const charLoraChips = h("div", { class: "ml-chips ml-char-loras" });
-    const charLoraBtn = h("button", { type: "button", class: "ml-char-lora-btn", title: "Pick a LoRA to save with this character" }, ["+ LoRA"]);
-    function setCharLoras(list) {
-        charLoras = list.slice();
-        charLoraChips.textContent = "";
-        for (const tag of charLoras) {
-            const x = h("button", { type: "button", class: "ml-chip-x", "aria-label": `Remove ${tag}` }, ["✕"]);
-            x.addEventListener("click", () => setCharLoras(charLoras.filter((t) => t !== tag)));
-            charLoraChips.appendChild(h("span", { class: "ml-chip" }, [tag, x]));
-        }
-        if (!charLoras.length) charLoraChips.appendChild(h("span", { class: "ml-char-loras-none" }, ["no LoRA"]));
-    }
-    setCharLoras([]);
     function setAdvOpen(open) {
         charAdvBody.classList.toggle("ml-hidden", !open);
         charAdvBtn.setAttribute("aria-expanded", String(open));
@@ -381,7 +366,6 @@ onUiLoaded(() => {
         h("div", { class: "ml-subpanel-title" }, ["Edit roster"]),
         h("div", { class: "ml-row" }, [h("label", {}, ["Abbrev"]), charAbbr, h("label", {}, ["Name"]), charName]),
         charDesc,
-        h("div", { class: "ml-row ml-char-lora-row" }, [h("span", { class: "ml-fld-label" }, ["LoRA"]), charLoraChips, charLoraBtn]),
         charAdv,
         h("div", { class: "ml-row ml-char-actions" }, [charSaveBtn, charDeleteBtn]),
     ]);
@@ -453,7 +437,6 @@ onUiLoaded(() => {
         if (selectAbbr && sorted.some((c) => c.abbr === selectAbbr)) charSelect.value = selectAbbr;
         charAddBtn.disabled = !sorted.length;
         charSaveBtn.disabled = charState.example || !charState.file;
-        charLoraBtn.disabled = charState.example || !charState.file;
         charNewCharBtn.disabled = charState.example || !charState.file;
         charDeleteBtn.disabled = charState.example || !charState.file || !sorted.length;
         charFileTrash.disabled = charState.example || !charState.file;
@@ -473,11 +456,8 @@ onUiLoaded(() => {
         charDesc.value = c ? c.description : "";
         charTags.set(c?.tags || []);
         charPalette.set(c?.palette || []);
-        setCharLoras(c?.loras || []);
         autoGrow(charDesc);
     }
-
-
 
     function applyFile(data, selectAbbr) {
         charState.file = data.name;
@@ -542,7 +522,6 @@ onUiLoaded(() => {
         charDesc.value = "";
         charTags.set([]);
         charPalette.set([]);
-        setCharLoras([]);
         autoGrow(charDesc);
         charMessage("Type the new character, then Save.");
         charAbbr.focus();
@@ -564,8 +543,7 @@ onUiLoaded(() => {
         charMessage(`Added (${c.abbr}) to the caption.`);
     });
 
-    // the box names the character by "(ABBR)" and gets its saved LoRAs (regional, that box only);
-    // the Summary caption says who that is
+    // the box names the character by "(ABBR)"; the Summary caption says who that is
     charBoxBtn.addEventListener("click", () => {
         const c = selectedCharacter();
         const item = state.items.find((it) => it.id === selectedId);
@@ -575,10 +553,7 @@ onUiLoaded(() => {
             return;
         }
         const n = state.items.indexOf(item) + 1;
-        const withAbbr = mlAddAbbr(item.caption, c.abbr);
-        const lorasNext = mlAddLoras(withAbbr ?? item.caption, c.loras || []);
-        const loras = lorasNext.added;
-        const boxNext = withAbbr !== null || loras ? lorasNext.caption : null;
+        const boxNext = mlAddAbbr(item.caption, c.abbr);
         if (boxNext !== null) {
             item.caption = boxNext;
             const row = listRefs.get(item.id);
@@ -607,14 +582,13 @@ onUiLoaded(() => {
             autoGrow(sumCaption);
             saveLayout();
         }
-        const loraNote = loras ? ` with ${loras} LoRA${loras > 1 ? "s" : ""}` : "";
         if (boxNext === null && !sumNext && !listsChanged) charMessage(`(${c.abbr}) is already in box #${n} and the caption.`);
-        else charMessage(`Added (${c.abbr}) to box #${n}${loraNote}${sumNext ? " and its line to the caption" : ""}.`);
+        else charMessage(`Added (${c.abbr}) to box #${n}${sumNext ? " and its line to the caption" : ""}.`);
     });
 
     charSaveBtn.addEventListener("click", async () => {
         try {
-            const data = await charRequest("/save", { name: charState.file, abbr: charAbbr.value, full_name: charName.value, description: charDesc.value, tags: charTags.get(), palette: charPalette.get(), loras: charLoras }); // + tags/palette/loras
+            const data = await charRequest("/save", { name: charState.file, abbr: charAbbr.value, full_name: charName.value, description: charDesc.value, tags: charTags.get(), palette: charPalette.get() }); // + tags/palette
             applyFile(data, charAbbr.value.trim());
             charMessage(`Saved ${charAbbr.value.trim()} to ${data.name}.`);
         } catch (e) {
@@ -901,15 +875,6 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
             appendTag(input, mlSplitLoraPick(pick).tag);
         });
     }
-
-    // character editor pick: the tag is kept with the character (saved on Save)
-    charLoraBtn.addEventListener("click", () =>
-        openLoraPicker((pick) => {
-            const tag = mlSplitLoraPick(pick).tag;
-            if (!charLoras.includes(tag)) setCharLoras([...charLoras, tag]);
-            charMessage("LoRA added. Save to keep it with the character.");
-        }),
-    );
 
     loraClose.addEventListener("click", closeLoraPicker);
     // no close on a click beside the window: it is full screen, and a stray click lost the pick (× or Esc closes)
