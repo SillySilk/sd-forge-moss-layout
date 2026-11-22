@@ -33,3 +33,23 @@ function mlAddLoras(caption, loras) {
     }
     return { caption: added ? out : caption, added };
 }
+
+// what "Add to box" writes into a box caption: "(ABBR)" at the start and the character's LoRAs at the end.
+// A character with LoRAs also gets its "Name, description" right after "(ABBR)": a box's LoRA only reaches
+// the words inside that box, so it needs the description there to have anything to act on.
+// Returns { caption, loras: how many LoRAs were new, described: whether the description was added }.
+function mlBoxCaption(caption, c) {
+    const loras = c.loras || [];
+    let out = mlAddAbbr(caption, c.abbr) ?? caption;
+    let described = false;
+    const line = `${c.name}, ${c.description}`;
+    if (loras.length && !out.toLowerCase().includes(c.description.toLowerCase())) {
+        const tag = `(${c.abbr.toLowerCase()})`;
+        const at = out.toLowerCase().indexOf(tag) + tag.length;
+        const rest = out.slice(at).trim();
+        out = `${out.slice(0, at)} ${line}${rest ? (/[.,;:!?]$/.test(line) ? " " : ". ") + rest : ""}`;
+        described = true;
+    }
+    const withLoras = mlAddLoras(out, loras);
+    return { caption: withLoras.caption, loras: withLoras.added, described };
+}
