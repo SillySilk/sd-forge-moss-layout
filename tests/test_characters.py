@@ -58,6 +58,14 @@ class StoreTest(unittest.TestCase):
         self.assertEqual(result["characters"][0]["palette"], ["#ABCDEF"])
         self.assertEqual(self.store.read("c")["characters"][0]["tags"], ["hat", "Scarf"], "kept on disk")
 
+    def test_save_loras(self):
+        self.store.create("c")
+        result = self.store.save_character("c", "MR", "Example: Mira", "a red scarf", loras=["<lora:style_a:0.8>", "<lora:style_a:0.8>", "not a lora", "<lora:b:1>"])
+        self.assertEqual(result["characters"][0]["loras"], ["<lora:style_a:0.8>", "<lora:b:1>"])
+        self.assertEqual(self.store.read("c")["characters"][0]["loras"], ["<lora:style_a:0.8>", "<lora:b:1>"], "kept on disk")
+        plain = self.store.save_character("c", "OB", "Example: Bram", "a beard")
+        self.assertNotIn("loras", plain["characters"][1], "no empty list written")
+
     def test_save_without_tags_writes_no_keys(self):
         self.store.create("c")
         self.store.save_character("c", "MR", "Example: Mira", "a red scarf", tags=[], palette=["nope"])
