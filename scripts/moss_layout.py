@@ -34,7 +34,7 @@ class SaveBody(BaseModel):
     description: str
     tags: list[str] = []  # optional MOSS tags / palette, cleaned by the store
     palette: list[str] = []
-    loras: list[str] = []  # <lora:...> tags, put into Extra when the character is added
+    loras: list[str] = []  # <lora:...> tags, put into the box caption by "Add to box"
 
 
 class DeleteBody(BaseModel):

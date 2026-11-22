@@ -355,7 +355,7 @@ onUiLoaded(() => {
         h("div", { class: "ml-char-adv-field" }, [h("span", { class: "ml-fld-label" }, ["Palette"]), charPalette.el]),
     ]);
     const charAdv = h("div", { class: "ml-char-adv" }, [charAdvBtn, charAdvBody]);
-    // the character's LoRAs: saved with it, and put into the Summary's Extra when it is added to the caption or a box
+    // the character's LoRAs: saved with it, and put into the box's caption by "Add to box" (not by "Add to caption")
     let charLoras = [];
     const charLoraChips = h("div", { class: "ml-chips ml-char-loras" });
     const charLoraBtn = h("button", { type: "button", class: "ml-char-lora-btn", title: "Pick a LoRA to save with this character" }, ["+ LoRA"]);
@@ -477,18 +477,7 @@ onUiLoaded(() => {
         autoGrow(charDesc);
     }
 
-    // the character's saved LoRAs go into the Summary's Extra (the main prompt's LoRA box), never a box caption;
-    // returns how many were new
-    function addCharLoras(c) {
-        let added = 0;
-        for (const tag of c.loras || []) {
-            if (sumExtra.value.includes(tag)) continue;
-            appendTag(sumExtra, tag);
-            added++;
-        }
-        return added;
-    }
-    const loraNote = (n) => (n ? ` and ${n} LoRA${n > 1 ? "s" : ""} to Extra` : "");
+
 
     function applyFile(data, selectAbbr) {
         charState.file = data.name;
@@ -562,25 +551,21 @@ onUiLoaded(() => {
 
     charAddBtn.addEventListener("click", () => {
         const c = selectedCharacter();
-        if (!c) {
-            flash(charAddBtn);
-            return;
-        }
-        const next = mlAppendCharacter(sumCaption.value, c);
-        const loras = addCharLoras(c);
+        const next = c && mlAppendCharacter(sumCaption.value, c);
         if (!next) {
-            if (!loras) flash(charAddBtn);
-            charMessage(`(${c.abbr}) is already in the caption${loraNote(loras).replace(" and", "; added")}.`);
+            flash(charAddBtn);
+            if (c) charMessage(`(${c.abbr}) is already in the caption.`);
             return;
         }
         sumCaption.value = next;
         state.summary.caption = next;
         autoGrow(sumCaption);
         saveLayout();
-        charMessage(`Added (${c.abbr}) to the caption${loraNote(loras)}.`);
+        charMessage(`Added (${c.abbr}) to the caption.`);
     });
 
-    // the box names the character by "(ABBR)"; the Summary caption says who that is
+    // the box names the character by "(ABBR)" and gets its saved LoRAs (regional, that box only);
+    // the Summary caption says who that is
     charBoxBtn.addEventListener("click", () => {
         const c = selectedCharacter();
         const item = state.items.find((it) => it.id === selectedId);
@@ -590,7 +575,10 @@ onUiLoaded(() => {
             return;
         }
         const n = state.items.indexOf(item) + 1;
-        const boxNext = mlAddAbbr(item.caption, c.abbr);
+        const withAbbr = mlAddAbbr(item.caption, c.abbr);
+        const lorasNext = mlAddLoras(withAbbr ?? item.caption, c.loras || []);
+        const loras = lorasNext.added;
+        const boxNext = withAbbr !== null || loras ? lorasNext.caption : null;
         if (boxNext !== null) {
             item.caption = boxNext;
             const row = listRefs.get(item.id);
@@ -619,9 +607,9 @@ onUiLoaded(() => {
             autoGrow(sumCaption);
             saveLayout();
         }
-        const loras = addCharLoras(c);
-        if (boxNext === null && !sumNext && !listsChanged && !loras) charMessage(`(${c.abbr}) is already in box #${n} and the caption.`);
-        else charMessage(`Added (${c.abbr}) to box #${n}${sumNext ? ", its line to the caption" : ""}${loraNote(loras)}.`);
+        const loraNote = loras ? ` with ${loras} LoRA${loras > 1 ? "s" : ""}` : "";
+        if (boxNext === null && !sumNext && !listsChanged) charMessage(`(${c.abbr}) is already in box #${n} and the caption.`);
+        else charMessage(`Added (${c.abbr}) to box #${n}${loraNote}${sumNext ? " and its line to the caption" : ""}.`);
     });
 
     charSaveBtn.addEventListener("click", async () => {

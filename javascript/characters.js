@@ -21,3 +21,15 @@ function mlAddAbbr(caption, abbr) {
     const rest = caption.trim();
     return rest ? `(${abbr}) ${rest}` : `(${abbr})`;
 }
+
+// a box caption with each LoRA tag not yet in it put at the end; added = how many were new
+function mlAddLoras(caption, loras) {
+    let out = caption.trim();
+    let added = 0;
+    for (const tag of loras) {
+        if (out.includes(tag)) continue;
+        out = out ? `${out} ${tag}` : tag;
+        added++;
+    }
+    return { caption: added ? out : caption, added };
+}
