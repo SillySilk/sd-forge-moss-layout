@@ -564,8 +564,8 @@ onUiLoaded(() => {
         charMessage(`Added (${c.abbr}) to the caption.`);
     });
 
-    // the box names the character by "(ABBR)" and gets its saved LoRAs (regional, that box only) plus,
-    // when it has LoRAs, its description; the Summary caption says who that is
+    // the box names the character by "(ABBR)" and gets its saved LoRAs (regional, that box only);
+    // the Summary caption says who that is
     charBoxBtn.addEventListener("click", () => {
         const c = selectedCharacter();
         const item = state.items.find((it) => it.id === selectedId);
@@ -575,9 +575,10 @@ onUiLoaded(() => {
             return;
         }
         const n = state.items.indexOf(item) + 1;
-        const built = mlBoxCaption(item.caption, c);
-        const loras = built.loras;
-        const boxNext = built.caption !== item.caption ? built.caption : null;
+        const withAbbr = mlAddAbbr(item.caption, c.abbr);
+        const lorasNext = mlAddLoras(withAbbr ?? item.caption, c.loras || []);
+        const loras = lorasNext.added;
+        const boxNext = withAbbr !== null || loras ? lorasNext.caption : null;
         if (boxNext !== null) {
             item.caption = boxNext;
             const row = listRefs.get(item.id);
@@ -606,7 +607,7 @@ onUiLoaded(() => {
             autoGrow(sumCaption);
             saveLayout();
         }
-        const loraNote = loras ? ` with ${loras} LoRA${loras > 1 ? "s" : ""}${built.described ? " and its description" : ""}` : "";
+        const loraNote = loras ? ` with ${loras} LoRA${loras > 1 ? "s" : ""}` : "";
         if (boxNext === null && !sumNext && !listsChanged) charMessage(`(${c.abbr}) is already in box #${n} and the caption.`);
         else charMessage(`Added (${c.abbr}) to box #${n}${loraNote}${sumNext ? " and its line to the caption" : ""}.`);
     });

@@ -6,7 +6,7 @@ const vm = require("node:vm");
 
 const ctx = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "javascript", "characters.js"), "utf8"), ctx);
-const { mlCaptionLine, mlCaptionHas, mlAppendCharacter, mlAddAbbr, mlAddLoras, mlBoxCaption } = ctx;
+const { mlCaptionLine, mlCaptionHas, mlAppendCharacter, mlAddAbbr, mlAddLoras } = ctx;
 
 const c = { abbr: "MR", name: "Mira Reed", description: "green scarf" };
 
@@ -36,15 +36,5 @@ assert.deepStrictEqual(plain(mlAddLoras("", ["<lora:a:1>", "<lora:b:0.5>"])), { 
 assert.deepStrictEqual(plain(mlAddLoras("(MR) <lora:a:1>", ["<lora:a:1>", "<lora:b:1>"])), { caption: "(MR) <lora:a:1> <lora:b:1>", added: 1 });
 assert.deepStrictEqual(plain(mlAddLoras(" (MR) <lora:a:1> ", ["<lora:a:1>"])), { caption: " (MR) <lora:a:1> ", added: 0 }, "unchanged when nothing is new");
 assert.deepStrictEqual(plain(mlAddLoras("(MR)", [])), { caption: "(MR)", added: 0 });
-
-// Add to box: a character with LoRAs brings its description into the box, next to the LoRA
-const lc = { abbr: "MR", name: "Mira Reed", description: "green scarf", loras: ["<lora:mira:0.8>"] };
-assert.deepStrictEqual(plain(mlBoxCaption("", lc)), { caption: "(MR) Mira Reed, green scarf <lora:mira:0.8>", loras: 1, described: true });
-assert.deepStrictEqual(plain(mlBoxCaption("waving", lc)), { caption: "(MR) Mira Reed, green scarf. waving <lora:mira:0.8>", loras: 1, described: true });
-assert.deepStrictEqual(plain(mlBoxCaption("(OB) and (mr) waving", lc)), { caption: "(OB) and (mr) Mira Reed, green scarf. waving <lora:mira:0.8>", loras: 1, described: true }, "after the existing tag");
-const again = mlBoxCaption("(MR) Mira Reed, green scarf. waving <lora:mira:0.8>", lc);
-assert.deepStrictEqual(plain(again), { caption: "(MR) Mira Reed, green scarf. waving <lora:mira:0.8>", loras: 0, described: false }, "second click adds nothing");
-assert.deepStrictEqual(plain(mlBoxCaption("waving", c)), { caption: "(MR) waving", loras: 0, described: false }, "no LoRA: description stays in the Summary only");
-assert.deepStrictEqual(plain(mlBoxCaption("waving", { ...lc, description: "a scarf." })), { caption: "(MR) Mira Reed, a scarf. waving <lora:mira:0.8>", loras: 1, described: true });
 
 console.log("characters.js: all assertions passed");
