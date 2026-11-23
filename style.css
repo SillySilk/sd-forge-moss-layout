@@ -1029,10 +1029,11 @@ button.ml-remove:hover {
 }
 
 /* item number beside the type dropdown on each box, and in the list */
+/* full width: a plain click on its empty part sends the box behind the others */
 .ml-box-head {
     display: flex;
     flex: 0 0 auto;
-    align-self: flex-start;
+    align-self: stretch;
     max-width: 100%;
     min-width: 0;
 }

@@ -1296,7 +1296,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         return mlSnapTargets(state.items.filter((it) => it !== item).map((it) => it.bbox), state.width, state.height);
     }
 
-    function startDrag(item, e) {
+    function startDrag(item, e, onEnd) {
         const ref = canvasRefs.get(item.id);
         const rect = stage.getBoundingClientRect();
         const scaleX = state.width / rect.width;
@@ -1338,6 +1338,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
             ref.el.classList.remove("ml-active");
             showGuides(null, null);
             if (moved) recordHistory();
+            if (onEnd) onEnd(moved);
         }
 
         window.addEventListener("pointermove", move);
@@ -1415,7 +1416,8 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         });
         // the item's number, as the prompt counts them (regional LoRA "item N")
         const num = h("span", { class: "ml-box-tag ml-box-num", title: "Item number in the prompt" }, [`#${state.items.indexOf(item) + 1}`]);
-        el.appendChild(h("div", { class: "ml-box-head" }, [num, tag]));
+        const head = h("div", { class: "ml-box-head", title: "Click: send this box behind the others. Drag: move it" }, [num, tag]);
+        el.appendChild(head);
 
         const caption = makeEditable(item, "caption");
         el.appendChild(caption);
@@ -1472,6 +1474,20 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
 
         el.addEventListener("pointerdown", (ev) => {
             if (ev.button !== 0) return;
+            // the top bar's empty part: a click sends the box to the back, a drag moves it
+            if (ev.target === head) {
+                ev.preventDefault();
+                startDrag(item, ev, (moved) => {
+                    if (moved) {
+                        bringToFront(item.id);
+                        selectBox(item.id);
+                    } else {
+                        sendToBack(item.id);
+                        if (selectedId === item.id) selectBox(null);
+                    }
+                });
+                return;
+            }
             bringToFront(item.id);
             selectBox(item.id);
             if (ev.target.classList.contains("ml-box-handle")) return;
@@ -1508,6 +1524,12 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
     function bringToFront(id) {
         stackOrder = stackOrder.filter((x) => x !== id);
         stackOrder.push(id);
+        applyStacking();
+    }
+
+    function sendToBack(id) {
+        stackOrder = stackOrder.filter((x) => x !== id);
+        stackOrder.unshift(id);
         applyStacking();
     }
 
