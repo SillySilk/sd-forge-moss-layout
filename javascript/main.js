@@ -859,11 +859,22 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         loraModal.classList.add("ml-hidden");
     }
 
-    // only the <lora:...> tag is inserted; the LoRA's trigger words are dropped (they often add unhelpful tags)
+    // a LoRA's trigger words open the main caption on a line of their own, wherever its tag goes, so they are easy to see and edit
+    function addTriggerWords(trigger) {
+        if (!trigger) return;
+        const next = mlPrependTriggerLine(sumCaption.value, trigger);
+        if (next === sumCaption.value.trim()) return;
+        sumCaption.value = next;
+        sumCaption.dispatchEvent(new Event("input", { bubbles: true }));
+        autoGrow(sumCaption);
+    }
+
     // summary pick: tag in Extra
     loraBtn.addEventListener("click", () =>
         openLoraPicker((pick) => {
-            appendTag(sumExtra, mlSplitLoraPick(pick).tag);
+            const { tag, trigger } = mlSplitLoraPick(pick);
+            appendTag(sumExtra, tag);
+            addTriggerWords(trigger);
         }),
     );
     // shared by the list row and the canvas box; the row's input event keeps item.caption and the box in step
@@ -872,7 +883,9 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         openLoraPicker((pick) => {
             const input = listRefs.get(item.id)?.captionInput;
             if (!input) return;
-            appendTag(input, mlSplitLoraPick(pick).tag);
+            const { tag, trigger } = mlSplitLoraPick(pick);
+            appendTag(input, tag);
+            addTriggerWords(trigger);
         });
     }
 

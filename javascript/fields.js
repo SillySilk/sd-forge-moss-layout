@@ -41,3 +41,17 @@ function mlSplitLoraPick(text) {
     if (!m) return { tag: s, trigger: "" };
     return { tag: m[1], trigger: m[2].trim().replace(/^[,\s]+|[,\s]+$/g, "") };
 }
+
+// a LoRA's trigger words as a new first line of the main caption, skipping words the caption already holds
+function mlPrependTriggerLine(caption, words) {
+    const body = String(caption || "").trim();
+    const have = new Set(body.split(/[,\n]/).map((w) => w.trim().toLowerCase()).filter(Boolean));
+    const add = [];
+    for (const w of String(words || "").split(",").map((x) => x.trim())) {
+        if (!w || have.has(w.toLowerCase())) continue;
+        have.add(w.toLowerCase());
+        add.push(w);
+    }
+    if (!add.length) return body;
+    return body ? `${add.join(", ")}\n${body}` : add.join(", ");
+}
