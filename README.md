@@ -24,7 +24,7 @@ Updates: **Extensions → Installed → Check for updates**.
   (Shift keeps the shape), snapping with guide lines (Alt for free movement), a width/height swap.
 - **Size follows txt2img** until you set one by hand; a marker says which, and **Follow txt2img** resumes.
 - **Reference image** under the boxes: load a file, drop or paste (Ctrl+V) one onto the canvas, or take txt2img's finished image or img2img's input image (img2img's result if its input is empty; reading the input needs a Forge build that supports it, see Notes).
-- **+ LoRA** picker for Extra and for each box. An Extra LoRA's trigger words go on the first line of the main caption; a box LoRA adds only its tag.
+- **+ LoRA** picker for Extra and for each box.
 - **Load the prompt** that is in txt2img back into the editor; **autosave** keeps the last session in the browser.
 - **Save JSON / Load JSON** keep layouts in the extension's `JSONscenes/` folder (subfolders allowed); Load opens the Windows Open dialog there.
 - **Panel templates:** `JSONscenes/Templates/` has 15 multi-panel page layouts (2 to 5 panels). Each names its panels and says where they sit; fill in the `[FILL IN ...]` parts.

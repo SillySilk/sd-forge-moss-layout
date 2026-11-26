@@ -6,7 +6,7 @@ const vm = require("node:vm");
 
 const ctx = vm.createContext({});
 vm.runInContext(fs.readFileSync(path.join(__dirname, "..", "javascript", "fields.js"), "utf8"), ctx);
-const { mlParseTags, mlCleanTags, mlCleanPalette, mlMergeList, mlSplitLoraPick, mlPrependTriggerLine } = ctx;
+const { mlParseTags, mlCleanTags, mlCleanPalette, mlMergeList, mlSplitLoraPick } = ctx;
 const eq = (a, b, msg) => assert.deepStrictEqual(Array.from(a), b, msg);
 
 eq(mlParseTags(" old man, , Old Man,hat\nscarf "), ["old man", "hat", "scarf"], "split, trim, drop empties, dedupe ignoring case");
@@ -33,13 +33,6 @@ eq(mlMergeList(["a", "b"], ["c"], 2), ["a", "b"], "respects the cap");
     assert.strictEqual(bare.trigger, "", "no trigger words");
     const lead = mlSplitLoraPick(" <lora:x:1>  ,  word ");
     assert.strictEqual(lead.trigger, "word", "stray comma and spaces trimmed");
-}
-{
-    assert.strictEqual(mlPrependTriggerLine("A man walks.", "ink sketch, crosshatch"), "ink sketch, crosshatch\nA man walks.", "own first line");
-    assert.strictEqual(mlPrependTriggerLine("", "ink sketch"), "ink sketch", "empty caption");
-    assert.strictEqual(mlPrependTriggerLine("A man walks.", ""), "A man walks.", "no trigger words");
-    assert.strictEqual(mlPrependTriggerLine("Ink Sketch\nA man walks.", "ink sketch, crosshatch"), "crosshatch\nInk Sketch\nA man walks.", "words already there are not repeated");
-    assert.strictEqual(mlPrependTriggerLine("x", "a, A, b"), "a, b\nx", "repeats inside the pick dropped");
 }
 
 console.log("fields.js: all assertions passed");

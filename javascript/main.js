@@ -268,7 +268,7 @@ onUiLoaded(() => {
     const redoBtn = h("button", { type: "button", class: "ml-redo", title: "Redo (Ctrl+Y)", disabled: "" }, ["\u21B7 Redo"]);
     // the builder opens blank; this brings back the layout saved before the page loaded
     const restoreBtn = h("button", { type: "button", class: "ml-restore", title: "Bring back the layout from your last session", disabled: "" }, ["Restore last session"]);
-    const listToolbar = h("div", { class: "ml-list-toolbar" }, [addBtn, clearBtn, undoBtn, redoBtn, restoreBtn]); // second from the bottom of the side panel
+    const listToolbar = h("div", { class: "ml-list-toolbar" }, [addBtn, clearBtn, undoBtn, redoBtn, restoreBtn]); // top of the side panel
     const listSection = h("div", { class: "ml-section ml-list-section" }, [listEl]);
 
     // the go buttons, large, with a small line under the label
@@ -336,7 +336,6 @@ onUiLoaded(() => {
     const charSelect = h("select", { class: "ml-char-select", title: "Saved characters" });
     const charAddBtn = h("button", { type: "button", class: "ml-char-add" }, ["Add to caption"]);
     const charBoxBtn = h("button", { type: "button", class: "ml-char-box", title: "Put (ABBR) in the selected box's caption, and the character's line in the Summary caption" }, ["Add to box"]);
-    const charNewBoxBtn = h("button", { type: "button", class: "ml-char-new-box", title: "Make a new box with (ABBR) at the top of its caption, and the character's line in the Summary caption" }, ["Add to new box"]);
     const charAbbr = h("input", { type: "text", class: "ml-char-abbr", maxlength: "5", placeholder: "LS" });
     const charName = h("input", { type: "text", class: "ml-char-name", placeholder: "Full name" });
     const charDesc = h("textarea", { class: "ml-char-desc", rows: "2", placeholder: "Description" });
@@ -377,7 +376,7 @@ onUiLoaded(() => {
             h("div", { class: "ml-subpanel-title" }, ["Add to prompt"]),
             h("div", { class: "ml-row" }, [charFileSelect, charFileTrash]),
             h("div", { class: "ml-row" }, [charSelect]), // the name gets the full width
-            h("div", { class: "ml-row" }, [charAddBtn, charBoxBtn, charNewBoxBtn]),
+            h("div", { class: "ml-row" }, [charAddBtn, charBoxBtn]),
             h("div", { class: "ml-row" }, [charNewCharBtn]), // under the character dropdown, visible while the editor is folded
         ]),
         charEditor,
@@ -437,7 +436,6 @@ onUiLoaded(() => {
         for (const c of sorted) charSelect.appendChild(h("option", { value: c.abbr }, [`${c.abbr} — ${c.name}`]));
         if (selectAbbr && sorted.some((c) => c.abbr === selectAbbr)) charSelect.value = selectAbbr;
         charAddBtn.disabled = !sorted.length;
-        charBoxBtn.disabled = charNewBoxBtn.disabled = !sorted.length;
         charSaveBtn.disabled = charState.example || !charState.file;
         charNewCharBtn.disabled = charState.example || !charState.file;
         charDeleteBtn.disabled = charState.example || !charState.file || !sorted.length;
@@ -545,43 +543,13 @@ onUiLoaded(() => {
         charMessage(`Added (${c.abbr}) to the caption.`);
     });
 
-    // the character's line joins the Summary caption; true if it was added
-    function addCharacterLine(c) {
-        const sumNext = mlAppendCharacter(sumCaption.value, c);
-        if (!sumNext) return false;
-        sumCaption.value = sumNext;
-        state.summary.caption = sumNext;
-        autoGrow(sumCaption);
-        saveLayout();
-        return true;
-    }
-
-    // a new box named "(ABBR)", with the character's tags and palette, selected so the next Add to box or LoRA goes there
-    charNewBoxBtn.addEventListener("click", () => {
-        const c = selectedCharacter();
-        if (!c) {
-            flash(charNewBoxBtn);
-            return;
-        }
-        const item = newItem();
-        item.caption = `(${c.abbr})`;
-        item.tags = mlMergeList([], c.tags || [], ML_MAX_TAGS);
-        item.palette = mlMergeList([], c.palette || [], ML_MAX_COLOURS);
-        state.items.push(item);
-        selectedId = item.id;
-        bringToFront(item.id);
-        renderAll(); // one undo step
-        const lineAdded = addCharacterLine(c);
-        charMessage(`Made box #${state.items.length} for (${c.abbr})${lineAdded ? " and added its line to the caption" : ""}.`);
-    });
-
     // the box names the character by "(ABBR)"; the Summary caption says who that is
     charBoxBtn.addEventListener("click", () => {
         const c = selectedCharacter();
         const item = state.items.find((it) => it.id === selectedId);
         if (!c || !item) {
             flash(charBoxBtn);
-            if (c) charMessage("Click a box on the canvas first, or use Add to new box.", true);
+            if (c) charMessage("Click a box on the canvas first.", true);
             return;
         }
         const n = state.items.indexOf(item) + 1;
@@ -607,7 +575,13 @@ onUiLoaded(() => {
             renderList();
             recordHistory(); // its own undo step after the caption one
         }
-        const sumNext = addCharacterLine(c);
+        const sumNext = mlAppendCharacter(sumCaption.value, c);
+        if (sumNext) {
+            sumCaption.value = sumNext;
+            state.summary.caption = sumNext;
+            autoGrow(sumCaption);
+            saveLayout();
+        }
         if (boxNext === null && !sumNext && !listsChanged) charMessage(`(${c.abbr}) is already in box #${n} and the caption.`);
         else charMessage(`Added (${c.abbr}) to box #${n}${sumNext ? " and its line to the caption" : ""}.`);
     });
@@ -685,7 +659,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         listSection,
         charactersSection,
     ]);
-    const side = h("div", { class: "ml-side" }, [submitSection, summarySection, objectsSection, imageSection, listToolbar, promptSection]); // box toolbar second from the bottom
+    const side = h("div", { class: "ml-side" }, [listToolbar, submitSection, summarySection, objectsSection, imageSection, promptSection]);
     // LoRA picker, mirroring the txt2img LoRA tab's cards
     const loraSearch = h("input", { type: "text", class: "ml-lora-search", placeholder: "Search..." });
     const loraFolder = h("select", { class: "ml-lora-folder", title: "Active Lora folder" });
@@ -885,27 +859,15 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         loraModal.classList.add("ml-hidden");
     }
 
-    // a LoRA's trigger words open the main caption on a line of their own, wherever its tag goes, so they are easy to see and edit
-    function addTriggerWords(trigger) {
-        if (!trigger) return;
-        const next = mlPrependTriggerLine(sumCaption.value, trigger);
-        if (next === sumCaption.value.trim()) return;
-        sumCaption.value = next;
-        sumCaption.dispatchEvent(new Event("input", { bubbles: true }));
-        autoGrow(sumCaption);
-    }
-
+    // only the <lora:...> tag is inserted; the LoRA's trigger words are dropped (they often add unhelpful tags)
     // summary pick: tag in Extra
     loraBtn.addEventListener("click", () =>
         openLoraPicker((pick) => {
-            const { tag, trigger } = mlSplitLoraPick(pick);
-            appendTag(sumExtra, tag);
-            addTriggerWords(trigger);
+            appendTag(sumExtra, mlSplitLoraPick(pick).tag);
         }),
     );
     // shared by the list row and the canvas box; the row's input event keeps item.caption and the box in step
-    // item pick: only the tag, at the end of the item's caption. Its trigger words stay out of the
-    // main caption: a box LoRA reaches only its own box's words, so there they are both unpatched and global
+    // item pick: the tag goes at the end of the item's caption
     function pickLoraForItem(item) {
         openLoraPicker((pick) => {
             const input = listRefs.get(item.id)?.captionInput;
