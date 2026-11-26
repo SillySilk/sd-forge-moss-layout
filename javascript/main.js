@@ -268,7 +268,7 @@ onUiLoaded(() => {
     const redoBtn = h("button", { type: "button", class: "ml-redo", title: "Redo (Ctrl+Y)", disabled: "" }, ["\u21B7 Redo"]);
     // the builder opens blank; this brings back the layout saved before the page loaded
     const restoreBtn = h("button", { type: "button", class: "ml-restore", title: "Bring back the layout from your last session", disabled: "" }, ["Restore last session"]);
-    const listToolbar = h("div", { class: "ml-list-toolbar" }, [addBtn, clearBtn, undoBtn, redoBtn, restoreBtn]); // top of the side panel
+    const listToolbar = h("div", { class: "ml-list-toolbar" }, [addBtn, clearBtn, undoBtn, redoBtn, restoreBtn]); // second from the bottom of the side panel
     const listSection = h("div", { class: "ml-section ml-list-section" }, [listEl]);
 
     // the go buttons, large, with a small line under the label
@@ -659,7 +659,7 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         listSection,
         charactersSection,
     ]);
-    const side = h("div", { class: "ml-side" }, [listToolbar, submitSection, summarySection, objectsSection, imageSection, promptSection]);
+    const side = h("div", { class: "ml-side" }, [submitSection, summarySection, objectsSection, imageSection, listToolbar, promptSection]); // box toolbar second from the bottom
     // LoRA picker, mirroring the txt2img LoRA tab's cards
     const loraSearch = h("input", { type: "text", class: "ml-lora-search", placeholder: "Search..." });
     const loraFolder = h("select", { class: "ml-lora-folder", title: "Active Lora folder" });
