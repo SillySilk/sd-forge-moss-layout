@@ -904,14 +904,13 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         }),
     );
     // shared by the list row and the canvas box; the row's input event keeps item.caption and the box in step
-    // item pick: the tag goes at the end of the item's caption
+    // item pick: only the tag, at the end of the item's caption. Its trigger words stay out of the
+    // main caption: a box LoRA reaches only its own box's words, so there they are both unpatched and global
     function pickLoraForItem(item) {
         openLoraPicker((pick) => {
             const input = listRefs.get(item.id)?.captionInput;
             if (!input) return;
-            const { tag, trigger } = mlSplitLoraPick(pick);
-            appendTag(input, tag);
-            addTriggerWords(trigger);
+            appendTag(input, mlSplitLoraPick(pick).tag);
         });
     }
 
