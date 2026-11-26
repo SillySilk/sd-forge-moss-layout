@@ -19,9 +19,7 @@ Updates: **Extensions → Installed → Check for updates**.
 
 - **Tags and palettes** for the whole image and for each box (MOSS fields, see below).
 - **Characters:** save a character once (abbreviation, full name, description, optional tags and palette) in a
-  `.jbcast` file; **Add to caption** / **Add to box** / **Add to new box** put it in the prompt.
-- **Roster LoRAs:** save LoRAs with a character file; opening the file lists them, and
-  **Extra** / **Box** put one in the prompt.
+  `.jbcast` file; **Add to caption** / **Add to box** put it in the prompt.
 - **Editing:** undo / redo (Ctrl+Z, Ctrl+Y), Delete / arrows / Ctrl+D on the selected box, resize from any side
   (Shift keeps the shape), snapping with guide lines (Alt for free movement), a width/height swap.
 - **Size follows txt2img** until you set one by hand; a marker says which, and **Follow txt2img** resumes.

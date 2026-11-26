@@ -41,11 +41,6 @@ class DeleteBody(BaseModel):
     abbr: str
 
 
-class LorasBody(BaseModel):
-    name: str
-    loras: list[str]
-
-
 class ImportBody(BaseModel):
     name: str
     content: str
@@ -79,10 +74,6 @@ def characters_api(_demo: gr.Blocks, app: FastAPI):
     @app.post(f"{base}/save")
     def save_character(body: SaveBody):
         return _call(store.save_character, body.name, body.abbr, body.full_name, body.description, body.tags, body.palette)
-
-    @app.post(f"{base}/loras")  # the roster's LoRA list
-    def save_loras(body: LorasBody):
-        return _call(store.save_loras, body.name, body.loras)
 
     @app.post(f"{base}/delete")
     def delete_character(body: DeleteBody):

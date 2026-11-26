@@ -370,14 +370,6 @@ onUiLoaded(() => {
         charAdv,
         h("div", { class: "ml-row ml-char-actions" }, [charSaveBtn, charDeleteBtn]),
     ]);
-    // the roster's LoRAs: saved in the .jbcast file, listed here whenever that roster is opened
-    const charLoraList = h("div", { class: "ml-char-loras" });
-    const charLoraAddBtn = h("button", { type: "button", class: "ml-char-lora-add", title: "Pick a LoRA and save it with this roster" }, ["+ LoRA"]);
-    const charLoraPanel = h("div", { class: "ml-subpanel ml-char-lora-panel" }, [
-        h("div", { class: "ml-subpanel-title" }, ["Roster LoRAs"]),
-        charLoraList,
-        h("div", { class: "ml-row" }, [charLoraAddBtn]),
-    ]);
     const charactersSection = h("div", { class: "ml-section ml-chars" }, [
         // New file / Import sit in the section's title row, beside the Edit fold
         h("div", { class: "ml-section-title" }, ["Character roster", h("span", { class: "ml-char-title-btns" }, [charNewFileBtn, charImportBtn, charFoldBtn])]),
@@ -388,12 +380,11 @@ onUiLoaded(() => {
             h("div", { class: "ml-row" }, [charAddBtn, charBoxBtn, charNewBoxBtn]),
             h("div", { class: "ml-row" }, [charNewCharBtn]), // under the character dropdown, visible while the editor is folded
         ]),
-        charLoraPanel,
         charEditor,
         charMsg,
     ]);
 
-    const charState = { file: null, example: false, characters: [], loras: [] };
+    const charState = { file: null, example: false, characters: [] };
 
     function storeGet(key) {
         try {
@@ -447,7 +438,6 @@ onUiLoaded(() => {
         if (selectAbbr && sorted.some((c) => c.abbr === selectAbbr)) charSelect.value = selectAbbr;
         charAddBtn.disabled = !sorted.length;
         charBoxBtn.disabled = charNewBoxBtn.disabled = !sorted.length;
-        renderRosterLoras();
         charSaveBtn.disabled = charState.example || !charState.file;
         charNewCharBtn.disabled = charState.example || !charState.file;
         charDeleteBtn.disabled = charState.example || !charState.file || !sorted.length;
@@ -475,7 +465,6 @@ onUiLoaded(() => {
         charState.file = data.name;
         charState.example = data.example;
         charState.characters = data.characters;
-        charState.loras = data.loras || [];
         charFileSelect.value = data.name;
         renderCharacters(selectAbbr);
     }
@@ -488,9 +477,7 @@ onUiLoaded(() => {
             charState.file = name;
             charState.example = false;
             charState.characters = [];
-            charState.loras = [];
             renderCharacters();
-            charLoraAddBtn.disabled = true;
             charSaveBtn.disabled = charDeleteBtn.disabled = true;
             charFileTrash.disabled = false; // a damaged file can still be deleted
             charMessage(e.message, true);
@@ -503,7 +490,6 @@ onUiLoaded(() => {
         charState.file = null;
         charState.example = false;
         charState.characters = [];
-        charState.loras = [];
         charFileSelect.value = "";
         renderCharacters();
     }
@@ -517,7 +503,6 @@ onUiLoaded(() => {
             if (!files.length) {
                 charState.file = null;
                 charState.characters = [];
-                charState.loras = [];
                 renderCharacters();
                 charFileTrash.disabled = true;
                 charMessage("No character files. Use New file.", true);
@@ -626,74 +611,6 @@ onUiLoaded(() => {
         if (boxNext === null && !sumNext && !listsChanged) charMessage(`(${c.abbr}) is already in box #${n} and the caption.`);
         else charMessage(`Added (${c.abbr}) to box #${n}${sumNext ? " and its line to the caption" : ""}.`);
     });
-
-    // ----- roster LoRAs -----
-
-    // "<lora:Some Name:0.8>" -> "Some Name"
-    const loraLabel = (line) => (line.match(/^<lora:([^:>]+)/)?.[1] ?? line).split(/[\\/]/).pop();
-
-    function renderRosterLoras() {
-        charLoraList.textContent = "";
-        const editable = !!charState.file && !charState.example;
-        charLoraAddBtn.disabled = !editable;
-        if (!charState.loras.length) {
-            charLoraList.appendChild(h("div", { class: "ml-hint" }, [charState.file ? "No LoRAs saved with this roster." : "Choose a character list to see its LoRAs."]));
-            return;
-        }
-        for (const line of charState.loras) {
-            const { tag, trigger } = mlSplitLoraPick(line);
-            const toExtra = h("button", { type: "button", title: "Put this LoRA in the Summary's Extra (whole image)" }, ["Extra"]);
-            const toBox = h("button", { type: "button", title: "Put this LoRA in the selected box's caption" }, ["Box"]);
-            const remove = h("button", { type: "button", class: "ml-char-lora-x", title: "Remove from this roster", "aria-label": `Remove ${loraLabel(line)}` }, ["✕"]);
-            remove.disabled = !editable;
-            toExtra.addEventListener("click", () => {
-                appendTag(sumExtra, tag);
-                addTriggerWords(trigger);
-                charMessage(`Added ${loraLabel(line)} to Extra.`);
-            });
-            toBox.addEventListener("click", () => {
-                const item = state.items.find((it) => it.id === selectedId);
-                const input = item && listRefs.get(item.id)?.captionInput;
-                if (!input) {
-                    flash(toBox);
-                    charMessage("Click a box on the canvas first.", true);
-                    return;
-                }
-                appendTag(input, tag);
-                addTriggerWords(trigger);
-                charMessage(`Added ${loraLabel(line)} to box #${state.items.indexOf(item) + 1}.`);
-            });
-            remove.addEventListener("click", () => saveRosterLoras(charState.loras.filter((l) => l !== line), remove, `Removed ${loraLabel(line)} from ${charState.file}.`));
-            charLoraList.appendChild(
-                h("div", { class: "ml-row ml-char-lora-row", title: line }, [h("span", { class: "ml-char-lora-name" }, [loraLabel(line)]), toExtra, toBox, remove]),
-            );
-        }
-    }
-
-    // only the LoRA list is redrawn, so a half-edited character in the editor stays as it is
-    async function saveRosterLoras(loras, button, done) {
-        try {
-            const data = await charRequest("/loras", { name: charState.file, loras });
-            charState.loras = data.loras || [];
-            renderRosterLoras();
-            if (done) charMessage(done);
-        } catch (e) {
-            flash(button);
-            charMessage(e.message, true);
-        }
-    }
-
-    charLoraAddBtn.addEventListener("click", () =>
-        openLoraPicker((pick) => {
-            const line = String(pick || "").trim();
-            const { tag } = mlSplitLoraPick(line);
-            if (charState.loras.some((l) => mlSplitLoraPick(l).tag === tag)) {
-                charMessage(`${loraLabel(line)} is already in this roster.`);
-                return;
-            }
-            saveRosterLoras([...charState.loras, line], charLoraAddBtn, `Saved ${loraLabel(line)} with ${charState.file}.`);
-        }),
-    );
 
     charSaveBtn.addEventListener("click", async () => {
         try {

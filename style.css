@@ -1589,30 +1589,3 @@ button.ml-remove:hover {
     border-color: var(--input-border-color-focus);
     box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
-
-/* Roster LoRAs: one row per LoRA saved with the character list */
-.ml-char-lora-panel { --ml-panel: #b98cf0; }
-
-.ml-char-loras {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.ml-root .ml-chars .ml-char-lora-row {
-    align-items: center;
-    gap: 6px;
-}
-
-.ml-char-lora-name {
-    flex: 1 1 0;
-    min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-.ml-root .ml-chars .ml-char-lora-row > button {
-    flex: 0 0 auto;
-    padding: 2px 8px;
-}

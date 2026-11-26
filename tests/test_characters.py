@@ -43,7 +43,7 @@ class StoreTest(unittest.TestCase):
         self.assertEqual(self.store.list_files(), ["A.jbcast", "b.jbcast"])
         with self.assertRaises(CharacterError):
             self.store.create("b")
-        self.assertEqual(self.store.read("b"), {"name": "b.jbcast", "example": False, "characters": [], "loras": []})
+        self.assertEqual(self.store.read("b"), {"name": "b.jbcast", "example": False, "characters": []})
 
     def test_save_and_upsert(self):
         self.store.create("c")
@@ -178,7 +178,7 @@ class StoreTest(unittest.TestCase):
     def test_import_ok(self):
         content = json.dumps(cast(("MR", "Example: Mira", "x"), example=True))
         result = self.store.import_file("mine", content)
-        self.assertEqual(result, {"name": "mine.jbcast", "example": False, "characters": [{"abbr": "MR", "name": "Example: Mira", "description": "x"}], "loras": []})
+        self.assertEqual(result, {"name": "mine.jbcast", "example": False, "characters": [{"abbr": "MR", "name": "Example: Mira", "description": "x"}]})
         with open(os.path.join(self.dir, "mine.jbcast"), encoding="utf-8") as f:
             self.assertNotIn("example", json.load(f))
 
@@ -195,25 +195,6 @@ class StoreTest(unittest.TestCase):
             with self.assertRaises(CharacterError, msg=name):
                 self.store.import_file(name, content)
         self.assertEqual(self.store.list_files(), ["taken.jbcast"])
-
-    def test_roster_loras(self):
-        self.store.create("c")
-        self.assertEqual(self.store.read("c")["loras"], [])
-        view = self.store.save_loras("c", ["<lora:Style A:0.8> soft light", "  <lora:Style A:0.8>   soft   light ", "<lora:B:1>"])
-        self.assertEqual(view["loras"], ["<lora:Style A:0.8> soft light", "<lora:B:1>"])
-        self.store.save_character("c", "MR", "Mira Reed", "green scarf")
-        self.assertEqual(self.store.read("c")["loras"], ["<lora:Style A:0.8> soft light", "<lora:B:1>"], "kept when a character is saved")
-        self.assertEqual(self.store.save_loras("c", [])["loras"], [])
-        with open(os.path.join(self.dir, "c.jbcast"), encoding="utf-8") as f:
-            self.assertNotIn("loras", json.load(f), "an empty list is not written")
-        for bad in [["not a lora"], "<lora:x:1>", [""]]:
-            with self.assertRaises(CharacterError, msg=bad):
-                self.store.save_loras("c", bad)
-
-    def test_roster_loras_read_only_example(self):
-        write(self.dir, "ex.jbcast", cast(("MR", "Mira", "d"), example=True))
-        with self.assertRaises(CharacterError):
-            self.store.save_loras("ex", ["<lora:x:1>"])
 
     def test_shipped_examples_valid(self):
         data = CharacterStore(os.path.join(ROOT, "characters")).read("examples")
