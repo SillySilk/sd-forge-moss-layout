@@ -1,6 +1,7 @@
 # character library for the MOSS Layout.
 # A .jbcast file is JSON: {"version": 1, "characters": [{"abbr", "name", "description", optional "tags", "palette"}]},
-# plus an optional "example": true that makes the file read-only.
+# plus an optional "example": true that makes the file read-only, and an optional "loras" list:
+# the roster's LoRAs, each the text the LoRA picker gives ("<lora:name:1> trigger words").
 import json
 import os
 import re
@@ -16,6 +17,8 @@ OPTIONAL_KEYS = {"tags", "palette"}  # MOSS tags and #RRGGBB colours, copied int
 COLOUR_RE = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MAX_TAGS = 16
 MAX_COLOURS = 8
+MAX_LORAS = 32
+LORA_RE = re.compile(r"^<lora:[^<>]+>")
 
 
 class CharacterError(Exception):
@@ -76,7 +79,7 @@ def validate_cast(data) -> dict:
     """Return a cleaned copy of a cast file's content, or raise CharacterError."""
     if not isinstance(data, dict):
         raise CharacterError("Not a character file.")
-    unknown = set(data) - {"version", "example", "characters"}
+    unknown = set(data) - {"version", "example", "characters", "loras"}
     if unknown:
         raise CharacterError(f"Unknown fields: {', '.join(sorted(unknown))}.")
     if data.get("version") != VERSION:
@@ -97,7 +100,22 @@ def validate_cast(data) -> dict:
             raise CharacterError(f"Abbreviation {c['abbr']} is used twice.")
         seen.add(key)
         cleaned.append(c)
-    return {"version": VERSION, "example": example, "characters": cleaned}
+    return {"version": VERSION, "example": example, "characters": cleaned, "loras": _check_loras(data.get("loras"))}
+
+
+def _check_loras(loras) -> list:
+    """The roster's LoRA lines, cleaned; each must start with a <lora:...> tag."""
+    if loras is None:
+        return []
+    if not isinstance(loras, list):
+        raise CharacterError("'loras' must be a list.")
+    out = []
+    for item in loras:
+        line = _clean(item)
+        if not LORA_RE.match(line):
+            raise CharacterError(f"Not a LoRA tag: {line[:60]!r}.")
+        out.append(line)
+    return _unique(out, MAX_LORAS)
 
 
 class CharacterStore:
@@ -128,9 +146,12 @@ class CharacterStore:
             raise CharacterError(f"{file_name}: {e}") from e
 
     def _write(self, file_name: str, data: dict) -> None:
-        out = {"version": VERSION, "characters": data["characters"]}
+        out = {"version": VERSION}
         if data.get("example"):
-            out = {"version": VERSION, "example": True, "characters": data["characters"]}
+            out["example"] = True
+        out["characters"] = data["characters"]
+        if data.get("loras"):
+            out["loras"] = data["loras"]
         fd, tmp = tempfile.mkstemp(dir=self.folder, suffix=".tmp")
         try:
             with os.fdopen(fd, "w", encoding="utf-8", newline="\n") as f:
@@ -144,7 +165,7 @@ class CharacterStore:
 
     @staticmethod
     def _view(file_name: str, data: dict) -> dict:
-        return {"name": file_name, "example": data["example"], "characters": data["characters"]}
+        return {"name": file_name, "example": data["example"], "characters": data["characters"], "loras": data.get("loras", [])}
 
     def _writable(self, file_name: str) -> dict:
         data = self._load(file_name)
@@ -160,7 +181,7 @@ class CharacterStore:
         file_name = normalize_name(name)
         if os.path.exists(self._path(file_name)):
             raise CharacterError(f"{file_name} already exists.")
-        data = {"version": VERSION, "example": False, "characters": []}
+        data = {"version": VERSION, "example": False, "characters": [], "loras": []}
         self._write(file_name, data)
         return self._view(file_name, data)
 
@@ -175,6 +196,14 @@ class CharacterStore:
                 break
         else:
             chars.append(new)
+        self._write(file_name, data)
+        return self._view(file_name, data)
+
+    def save_loras(self, name: str, loras: list) -> dict:
+        """Replace the roster's LoRA list."""
+        file_name = normalize_name(name)
+        data = self._writable(file_name)
+        data["loras"] = _check_loras(loras)
         self._write(file_name, data)
         return self._view(file_name, data)
 
