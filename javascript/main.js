@@ -859,15 +859,27 @@ It is moved to the characters/deleted folder, so it can be put back by hand.`)) 
         loraModal.classList.add("ml-hidden");
     }
 
-    // only the <lora:...> tag is inserted; the LoRA's trigger words are dropped (they often add unhelpful tags)
-    // summary pick: tag in Extra
+    // an Extra LoRA's trigger words open the main caption on a line of their own, so they are easy to see and edit
+    function addTriggerWords(trigger) {
+        if (!trigger) return;
+        const next = mlPrependTriggerLine(sumCaption.value, trigger);
+        if (next === sumCaption.value.trim()) return;
+        sumCaption.value = next;
+        sumCaption.dispatchEvent(new Event("input", { bubbles: true }));
+        autoGrow(sumCaption);
+    }
+
+    // summary pick: tag in Extra, trigger words on the main caption's first line
     loraBtn.addEventListener("click", () =>
         openLoraPicker((pick) => {
-            appendTag(sumExtra, mlSplitLoraPick(pick).tag);
+            const { tag, trigger } = mlSplitLoraPick(pick);
+            appendTag(sumExtra, tag);
+            addTriggerWords(trigger);
         }),
     );
     // shared by the list row and the canvas box; the row's input event keeps item.caption and the box in step
-    // item pick: the tag goes at the end of the item's caption
+    // item pick: only the tag, at the end of the item's caption. Its trigger words stay out of the
+    // main caption: a box LoRA reaches only its own box's words, so there they are both unpatched and global
     function pickLoraForItem(item) {
         openLoraPicker((pick) => {
             const input = listRefs.get(item.id)?.captionInput;
